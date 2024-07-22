@@ -1,0 +1,1074 @@
+from "utils/casts" import cast;
+
+// Variable-sized array of bool.
+//
+// N is the maximum size.
+struct Array_bool<N> {
+    bool[N] values;
+    u32 n;
+}
+
+// Variable-sized array of bitmaps (= bool[M]).
+//
+// N is the maximum size.
+struct Array_bitmap<M, N> {
+    bool[N][M] values;
+    u32 n;
+}
+
+// Variable-sized array of u64.
+//
+// N is the maximum size.
+struct Array_u64<N> {
+    u64[N] values;
+    u32 n;
+}
+
+// Assert that values are sorted.
+def assert_sorted<N>(Array_u64<N> a) -> bool {
+    for u32 i in 1..N {
+        assert(i < a.n ? a.values[i - 1] <= a.values[i] : true);
+    }
+    return true;
+}
+
+// Assert that the square root of `value` is `sqrt`.
+// Note that the square root may be rounded.
+def assert_sqrt(u64 value, u64 sqrt) -> bool {
+    assert(sqrt * sqrt <= value);
+    assert((sqrt + 1) * (sqrt + 1) > value);
+    return true;
+}
+
+// Count values. This is simply the length of the array.
+def count<N>(Array_u64<N> a) -> u32 {
+    return a.n;
+}
+
+// Count distinct values.
+def count_distinct<N>(Array_u64<N> a) -> u32 {
+    assert(assert_sorted::<N>(a));
+    u32 mut count = 1;
+    for u32 i in 1..N {
+        bool distinct = i < a.n && a.values[i - 1] != a.values[i];
+        count = count + if (distinct) { 1 } else { 0 };
+    }
+    return count;
+}
+
+// Get distinct values.
+def distinct<N>(Array_u64<N> a) -> Array_u64<N> {
+    assert(assert_sorted::<N>(a));
+    u64[N] mut distincts = [0; N];
+    distincts[0] = a.values[0];
+    u32 mut j = 1;
+    for u32 i in 1..N {
+        bool distinct = i < a.n && a.values[i - 1] != a.values[i];
+        distincts[j] = if (distinct) { a.values[i] } else { distincts[j] };
+        j = if (distinct) { j + 1 } else { j };
+    }
+    log("distinct: {}", distincts);
+    return Array_u64 { values: distincts, n: j };
+}
+
+// Calculate the sum of the values.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def sum<N>(Array_u64<N> a) -> u64 {
+    u64 mut sum = 0;
+    for u32 i in 0..N {
+        sum = sum + if (i < a.n) { a.values[i] } else { 0 };
+    }
+    return sum;
+}
+
+// Return the maximum.
+// Values must be pre-sorted.
+def max<N>(Array_u64<N> a) -> u64 {
+    assert(assert_sorted::<N>(a));
+    return a.values[a.n - 1];
+}
+
+// Return the minimum.
+// Values must be pre-sorted.
+def min<N>(Array_u64<N> a) -> u64 {
+    assert(assert_sorted::<N>(a));
+    return a.values[0];
+}
+
+// Calculate the average.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def average<N>(Array_u64<N> a) -> u64 {
+    u64 sum = sum(a);
+    u64 n = cast(a.n);
+    u64 avg = sum / n;  // floor division
+    log("sum = {}, n = {}, avg = {}", sum, n, avg);
+    return avg;
+}
+
+// Calculate population variance.
+// We delay the division to avoid rounding errors.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def population_variance<N>(Array_u64<N> a) -> u64 {
+    u64 mut sum = 0;
+    u64 mut sum2 = 0; // sum of squares
+    for u32 i in 0..N {
+        u64 value = if (i < a.n) { a.values[i] } else { 0 };
+        sum = sum + value;
+        sum2 = sum2 + value * value;
+    }
+    u64 n = cast(a.n);
+    u64 variance = (sum2 * n - sum * sum) / (n * n);
+    log("sum = {}, sum2 = {}, n = {}, variance = {}", sum, sum2, n, variance);
+    return variance;
+}
+
+// Calculate sample variance.
+// We delay the division to avoid rounding errors.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def sample_variance<N>(Array_u64<N> a) -> u64 {
+    u64 mut sum = 0;
+    u64 mut sum2 = 0; // sum of squares
+    for u32 i in 0..N {
+        u64 value = if (i < a.n) { a.values[i] } else { 0 };
+        sum = sum + value;
+        sum2 = sum2 + value * value;
+    }
+    u64 n = cast(a.n);
+    u64 variance = (sum2 * n - sum * sum) / (n * (n - 1));
+    log("sum = {}, sum2 = {}, n = {}, variance = {}", sum, sum2, n, variance);
+    return variance;
+}
+
+// Check population standard deviation.
+// This calculates the population variance and then checks if `stddev` is the (rounded)
+// square root of the variance.
+def population_stddev<N>(Array_u64<N> a, u64 stddev) -> u64 {
+    u64 variance = population_variance(a);
+    assert(assert_sqrt(variance, stddev));
+    log("variance = {}, stddev = {}", variance, stddev);
+    return stddev;
+}
+
+// Check sample standard deviation.
+// This calculates the sample variance and then checks if `stddev` is the (rounded)
+// square root of the variance.
+def sample_stddev<N>(Array_u64<N> a, u64 stddev) -> u64 {
+    u64 variance = sample_variance(a);
+    assert(assert_sqrt(variance, stddev));
+    log("variance = {}, stddev = {}", variance, stddev);
+    return stddev;
+}
+
+// Calculate the median.
+// Values must be pre-sorted.
+// Note: does not work for array of length 1.
+def median<N>(Array_u64<N> a) -> u64 {
+    assert(assert_sorted::<N>(a));
+    // Index used to fetch median in historical results.
+    // Median is at position iMedian if n is odd, or is
+    // the average of iMedian-1 and iMedian if n is even.
+    u32 iMedian = a.n / 2;
+    return if (a.n % 2 == 0) {
+        (a.values[iMedian - 1] + a.values[iMedian]) / 2
+    } else {
+        a.values[iMedian]
+    };
+}
+
+// Collect the top M values, sorted in descending order.
+def top<N, M>(Array_u64<N> a) -> Array_u64<M> {
+    assert(assert_sorted::<N>(a));
+    u64[M] mut top = [0; M];
+    for u32 i in 0..M {
+        top[i] = if (i < a.n) { a.values[a.n - i - 1] } else { 0 };
+    }
+    u32 n = if (a.n < M) { a.n } else { M };
+    return Array_u64 { values: top, n: n };
+}
+
+// Collect the top M distinct values, sorted in descending order.
+// M must be <= N.
+def top_distinct<N, M>(Array_u64<N> a) -> Array_u64<M> {
+    assert(assert_sorted::<N>(a));
+    u64[N] mut top = [0; N];
+    top[0] = a.values[a.n - 1];
+    u32 mut j = 1;
+    for u32 i in 1..N {
+        // We are stepping backwards through the array.
+        u32 i_current = N - i - 1;
+        // Before end of array, and distinct from next.
+        bool distinct = i_current < (a.n - 1) && a.values[i_current] != a.values[i_current + 1];
+        top[j] = if (distinct) { a.values[i_current] } else { top[j] };
+        j = if (distinct) { j + 1 } else { j };
+    }
+    u32 n = if (j < M) { j } else { M };
+    log("top = {}, n = {}", top, n);
+    return Array_u64 { values: top[0..M], n: n };
+}
+
+// Collect the bottom M values, sorted in ascending order.
+def bottom<N, M>(Array_u64<N> a) -> Array_u64<M> {
+    assert(assert_sorted::<N>(a));
+    u64[M] mut bottom = [0; M];
+    for u32 i in 0..M {
+        bottom[i] = if (i < a.n) { a.values[i] } else { 0 };
+    }
+    u32 n = if (a.n < M) { a.n } else { M };
+    return Array_u64 { values: bottom, n: n };
+}
+
+// Collect the bottom M distinct values, sorted in ascending order.
+// M must be <= N.
+def bottom_distinct<N, M>(Array_u64<N> a) -> Array_u64<M> {
+    assert(assert_sorted::<N>(a));
+    u64[N] mut bottom = [0; N];
+    bottom[0] = a.values[0];
+    u32 mut j = 1;
+    for u32 i in 1..N {
+        // Before end of array, and distinct from previous.
+        bool distinct = i < a.n && a.values[i] != a.values[i - 1];
+        bottom[j] = if (distinct) { a.values[i] } else { bottom[j] };
+        j = if (distinct) { j + 1 } else { j };
+    }
+    u32 n = if (j < M) { j } else { M };
+    log("bottom = {}, n = {}", bottom, n);
+    return Array_u64 { values: bottom[0..M], n: n };
+}
+
+// Get the rank of a value in a group of values.
+//
+// The result is one plus the number of values preceding or equal to the current value
+// in the ordered array. The values will produce gaps in the sequence.
+def rank<N>(Array_u64<N> a, u64 value) -> u32 {
+    assert(assert_sorted::<N>(a));
+    u32 mut rank = 0;
+    for u32 i in 0..N {
+        rank = rank + if (i < a.n && a.values[i] <= value) { 1 } else { 0 };
+    }
+    return rank;
+}
+
+// Get the rank of a value in a group of values.
+//
+// The result is one plus the number of values preceding the current value in
+// the ordered array. The values will produce gaps in the sequence.
+def rank_strict<N>(Array_u64<N> a, u64 value) -> u32 {
+    assert(assert_sorted::<N>(a));
+    u32 mut rank = 0;
+    for u32 i in 0..N {
+        rank = rank + if (i < a.n && a.values[i] < value) { 1 } else { 0 };
+    }
+    return rank + 1;
+}
+
+// Get the (dense) rank of a value in a group of values.
+//
+// The result is one plus the previously assigned rank value. Unlike the function rank,
+// dense_rank will not produce gaps in the ranking sequence.
+def dense_rank<N>(Array_u64<N> a, u64 value) -> u32 {
+    Array_u64<N> distincts = distinct(a);
+    // return rank(distincts, value); -- prevent double check on assert_sorted
+    u32 mut rank = 0;
+    for u32 i in 0..N {
+        rank = rank + if (i < distincts.n && distincts.values[i] <= value) { 1 } else { 0 };
+    }
+    return rank;
+}
+
+// Get the relative rank of a value, multiplied with 100.
+//
+// The result is (rank - 1) / (count - 1) * 100.
+//
+// This does not work for lists with length 1.
+// XXX We use rank_strict. Is that correct?
+def percent_rank<N>(Array_u64<N> a, u64 value) -> u32 {
+    u32 rank = rank_strict(a, value);
+    return (rank - 1) * 100 / (a.n - 1);
+}
+
+// Calculate the cumulative distribution of a value in a list of values.
+// The result is multiplied with 100.
+// 
+// The result is the number of values preceding or equal to the current value in the
+// ordered list, divided by the number of values in the list, multiplied with 100.
+def cume_dist<N>(Array_u64<N> a, u64 value) -> u32 {
+    return rank(a, value) * 100 / a.n;
+}
+
+// Get the row number of a value in a group of values.
+//
+// Assigns a unique, sequential number to each value, starting with one, according to the
+// ordered array.
+// row_number and rank are similar: row_number numbers all values sequentially (for
+// example 1, 2, 3, 4, 5), while rank provides the same numeric value for ties (for
+// example 1, 2, 2, 4, 5).
+//
+// Note: we cannot possibly implement this correctly, as we cannot distinguish between
+// two identical values. Hence, we just return the rank.
+def row_number<N>(Array_u64<N> a, u64 value) -> u32 {
+    return rank(a, value);
+}
+
+// Calculate ntile.
+//
+// Divides the values for the array into n buckets ranging from 1 to at most n.
+//
+// If the number of values in the array doesn't divide evenly into the number of
+// buckets, then the remainder values are distributed one per bucket, starting with the
+// first bucket. For example, with 6 rows and 4 buckets, the bucket values would be as
+// follows: 1 1 2 2 3 4    -- XXX is this true?
+// TODO is this correct?
+// i ranges from 0 to n-1.
+def ntile<N>(Array_u64<N> a, u32 n, u32 i) -> u64 {
+    assert(assert_sorted::<N>(a));
+    u32 i_ = a.n * i / n;
+    return a.values[i_];
+}
+
+// Calculate percentile. The value of percentage must be between 0 and 100.
+// XXX is this correct?
+def percentile<N>(Array_u64<N> a, u32 p) -> u64 {
+    assert(assert_sorted::<N>(a));
+    u32 i = if (p == 100) { a.n - 1 } else { a.n * p / 100 };
+    return a.values[i];
+}
+
+// The first element.
+def first<N>(Array_u64<N> a) -> u64 {
+    return a.values[0];
+}
+
+// The last element.
+def last<N>(Array_u64<N> a) -> u64 {
+    return a.values[a.n - 1];
+}
+
+// Returns the value at the offsetth row after the current value in the array.
+def lead<N>(Array_u64<N> a, u32 offset, u64 value) -> u64 {
+    assert(assert_sorted::<N>(a));
+    u32 rank = rank_strict(a, value);
+    u32 i = rank - 1 + offset;
+    return a.values[i];
+}
+
+// Returns the value at the offsetth row before the current value in the array.
+def lag<N>(Array_u64<N> a, u32 offset, u64 value) -> u64 {
+    assert(assert_sorted::<N>(a));
+    u32 rank = rank_strict(a, value);
+    u32 i = rank - 1 - offset;
+    return a.values[i];
+}
+
+// Returns true if at least one (i.e. "any") value is true.
+def any<N>(Array_bool<N> a) -> bool {
+    bool mut result = false;
+    for u32 i in 0..N {
+        result = if (i < a.n && a.values[i]) { true } else { result };
+    }
+    return result;
+}
+
+// Returns true if all (i.e. "every") values are true.
+def every<N>(Array_bool<N> a) -> bool {
+    bool mut result = true;
+    for u32 i in 0..N {
+        result = if (i < a.n && !a.values[i]) { false } else { result };
+    }
+    return result;
+}
+
+// Bitwise AND of values.
+def bitwise_and<M, N>(Array_bitmap<M, N> a) -> bool[M] {
+    bool[M] mut result = [true; M];
+    for u32 j in 0..M {
+        for u32 i in 0..N {
+            result[j] = if (i < a.n) { result[j] && a.values[i][j] } else { result[j] };
+        }
+    }
+    return result;
+}
+
+// Bitwise OR of values.
+def bitwise_or<M, N>(Array_bitmap<M, N> a) -> bool[M] {
+    bool[M] mut result = [false; M];
+    for u32 j in 0..M {
+        for u32 i in 0..N {
+            result[j] = if (i < a.n) { result[j] || a.values[i][j] } else { result[j] };
+        }
+    }
+    return result;
+}
+
+// XOR of two bools.
+def xor(bool a, bool b) -> bool {
+    return (a || b) && !(a && b);
+    // TODO check if this is faster than using nested if's.
+}
+
+// Bitwise XOR of values.
+def bitwise_xor<M, N>(Array_bitmap<M, N> a) -> bool[M] {
+    bool[M] mut result = [false; M];
+    for u32 j in 0..M {
+        for u32 i in 0..N {
+            result[j] = if (i < a.n) { xor(result[j], a.values[i][j]) } else { result[j] };
+        }
+    }
+    return result;
+}
+
+const Array_u64<10> TEST_BASE = Array_u64 { values: [0, 1, 2, 3, 3, 4, 6, 7, 8, 20], n: 10 };
+const Array_u64<1> TEST_LENGTH_1 = Array_u64 { values: [5], n: 1 };
+const Array_u64<2> TEST_LENGTH_2 = Array_u64 { values: [5, 6], n: 2 };
+const Array_u64<10> TEST_DISTINCT = Array_u64 { values: [7, 8, 55, 123, 456, 789, 1000, 1001, 1002, 1003], n: 10 };
+const Array_u64<10> TEST_SAME = Array_u64 { values: [7, 7, 7, 7, 7, 7, 7, 7, 7, 7], n: 10 };
+const Array_u64<9> TEST_ODD_LENGTH = Array_u64 { values: [0, 1, 4, 4, 4, 6, 7, 8, 20], n: 9 };
+const Array_u64<10> TEST_ZERO_PADDED = Array_u64 { values: [0, 1, 4, 4, 4, 6, 7, 8, 20, 0], n: 9 };
+const Array_u64<10> TEST_UNSORTED = Array_u64 { values: [21, 7, 8, 9, 0, 30, 40, 33, 12, 8], n: 10 };
+
+const Array_bool<4> TEST_BOOL_BASE = Array_bool { values: [true, true, false, true], n: 4 };
+const Array_bool<4> TEST_BOOL_ALL_TRUE = Array_bool { values: [true, true, true, true], n: 4 };
+const Array_bool<4> TEST_BOOL_ALL_FALSE = Array_bool { values: [false, false, false, false], n: 4 };
+const Array_bool<6> TEST_BOOL_ZERO_PADDED = Array_bool { values: [true, true, true, false, false, false], n: 3 };
+
+const Array_bitmap<3, 2> TEST_BITMAP_BASE = Array_bitmap { values: [[false, true, true], [true, false, true]], n: 2 };
+
+def test_base() -> bool {
+    Array_u64<10> a = TEST_BASE; // = [0, 1, 2, 3, 3, 4, 6, 7, 8, 20]
+    u32 N = 10;
+    assert(count(a) == 10);
+    assert(count_distinct(a) == 9);
+    assert(distinct(a) == Array_u64 { values: [0, 1, 2, 3, 4, 6, 7, 8, 20, 0], n: 9 });
+    assert(sum(a) == 54);
+    assert(max(a) == 20);
+    assert(min(a) == 0);
+    assert(average(a) == 5); // 5.4
+    assert(population_variance(a) == 29); // 29.64
+    assert(sample_variance(a) == 32); // 32.933
+    assert(population_stddev(a, 5) == 5); // 5.4443
+    assert(sample_stddev(a, 5) == 5); // 5.7388
+    assert(median(a) == 3); // 3.5
+    assert(top::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [20, 8], n: 2 });
+    assert(top::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top_distinct::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top_distinct::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 6>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 3], n: 6 });
+    assert(top_distinct::<N, 7>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 3, 2], n: 7 });
+    assert(top_distinct::<N, 10>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 3, 2, 1, 0, 0], n: 9 });
+    // Note that the second-last 0 is an actual value and the last one is padding.
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [0, 1], n: 2 });
+    assert(bottom::<N, 3>(a) == Array_u64 { values: [0, 1, 2], n: 3 });
+    assert(bottom::<N, 5>(a) == Array_u64 { values: [0, 1, 2, 3, 3], n: 5 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom_distinct::<N, 3>(a) == Array_u64 { values: [0, 1, 2], n: 3 });
+    assert(bottom_distinct::<N, 4>(a) == Array_u64 { values: [0, 1, 2, 3], n: 4 });
+    assert(bottom_distinct::<N, 5>(a) == Array_u64 { values: [0, 1, 2, 3, 4], n: 5 });
+    assert(bottom_distinct::<N, 6>(a) == Array_u64 { values: [0, 1, 2, 3, 4, 6], n: 6 });
+    assert(bottom_distinct::<N, 10>(a) == Array_u64 { values: [0, 1, 2, 3, 4, 6, 7, 8, 20, 0], n: 9 });
+    assert(rank(a, 0) == 1);
+    assert(rank(a, 1) == 2);
+    assert(rank(a, 2) == 3);
+    assert(rank(a, 3) == 5);
+    assert(rank(a, 4) == 6);
+    assert(rank(a, 20) == 10);
+    assert(dense_rank(a, 0) == 1);
+    assert(dense_rank(a, 1) == 2);
+    assert(dense_rank(a, 2) == 3);
+    assert(dense_rank(a, 3) == 4);
+    assert(dense_rank(a, 4) == 5);
+    assert(dense_rank(a, 20) == 9);
+    assert(percent_rank(a, 0) == 0); // 0/9
+    assert(percent_rank(a, 1) == 11); // 1/9
+    assert(percent_rank(a, 2) == 22); // 2/9
+    assert(percent_rank(a, 3) == 33); // 3/9
+    assert(percent_rank(a, 4) == 55); // 5/9
+    assert(percent_rank(a, 20) == 100); // 9/9
+    assert(cume_dist(a, 0) == 10); // 1/10
+    assert(cume_dist(a, 1) == 20); // 2/10
+    assert(cume_dist(a, 2) == 30); // 3/10
+    assert(cume_dist(a, 3) == 50); // 5/10
+    assert(cume_dist(a, 4) == 60); // 6/10
+    assert(cume_dist(a, 20) == 100); // 10/10
+    // Into ten buckets
+    assert(ntile(a, 10, 0) == 0);
+    assert(ntile(a, 10, 1) == 1);
+    assert(ntile(a, 10, 2) == 2);
+    assert(ntile(a, 10, 3) == 3);
+    assert(ntile(a, 10, 4) == 3);
+    assert(ntile(a, 10, 5) == 4);
+    assert(ntile(a, 10, 6) == 6);
+    assert(ntile(a, 10, 7) == 7);
+    assert(ntile(a, 10, 8) == 8);
+    assert(ntile(a, 10, 9) == 20);
+    // Into five buckets
+    assert(ntile(a, 5, 0) == 0);
+    assert(ntile(a, 5, 1) == 2);
+    assert(ntile(a, 5, 2) == 3);
+    assert(ntile(a, 5, 3) == 6);
+    assert(ntile(a, 5, 4) == 8);
+    // Into two buckets
+    assert(ntile(a, 2, 0) == 0); // index 0
+    assert(ntile(a, 2, 1) == 4); // index 5
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 0);
+    // Into twenty buckets
+    assert(ntile(a, 20, 0) == 0);
+    assert(ntile(a, 20, 1) == 0);
+    assert(ntile(a, 20, 2) == 1);
+    assert(ntile(a, 20, 3) == 1);
+    assert(ntile(a, 20, 4) == 2);
+    assert(ntile(a, 20, 5) == 2);
+    assert(ntile(a, 20, 6) == 3);
+    assert(ntile(a, 20, 7) == 3);
+    assert(ntile(a, 20, 8) == 3);
+    assert(ntile(a, 20, 9) == 3);
+    assert(ntile(a, 20, 10) == 4);
+    assert(ntile(a, 20, 11) == 4);
+    assert(ntile(a, 20, 12) == 6);
+    assert(ntile(a, 20, 13) == 6);
+    assert(ntile(a, 20, 14) == 7);
+    assert(ntile(a, 20, 15) == 7);
+    assert(ntile(a, 20, 16) == 8);
+    assert(ntile(a, 20, 17) == 8);
+    assert(ntile(a, 20, 18) == 20);
+    assert(ntile(a, 20, 19) == 20);
+    assert(percentile(a, 0) == 0); // index 0
+    assert(percentile(a, 1) == 0); // index 0
+    assert(percentile(a, 25) == 2); // index 2
+    assert(percentile(a, 50) == 4); // index 5
+    assert(percentile(a, 75) == 7); // index 7
+    assert(percentile(a, 99) == 20); // index 9
+    assert(percentile(a, 100) == 20); // index 9
+    assert(first(a) == 0);
+    assert(last(a) == 20);
+    assert(lead(a, 1, 0) == 1); // Find first value after 0
+    assert(lead(a, 2, 0) == 2); // Find second value after 0
+    assert(lead(a, 1, 1) == 2); // Find first value after 0
+    assert(lead(a, 1, 3) == 3); // Find first value after (first) 3
+    assert(lead(a, 2, 3) == 4); // Find second value after (first) 3
+    assert(lead(a, 1, 4) == 6); // Find first value after 4
+    assert(lag(a, 1, 1) == 0); // Find first value before 1
+    assert(lag(a, 1, 3) == 2); // Find first value before (first) 3
+    assert(lag(a, 2, 3) == 1); // Find second value before (first) 3
+    assert(lag(a, 1, 4) == 3); // Find first value before 4
+    assert(lag(a, 2, 4) == 3); // Find second value before 4
+    return true;
+}
+
+def test_length_1() -> bool {
+    Array_u64<1> a = TEST_LENGTH_1; // = [5]
+    u32 N = 1;
+    assert(count(a) == 1);
+    assert(count_distinct(a) == 1);
+    assert(distinct(a) == Array_u64 { values: [5], n: 1 });
+    assert(sum(a) == 5);
+    assert(max(a) == 5);
+    assert(min(a) == 5);
+    assert(average(a) == 5);
+    assert(population_variance(a) == 0);
+    // assert(sample_variance(a) == 0); - performs / N-1: division by zero
+    assert(population_stddev(a, 0) == 0);
+    // assert(sample_stddev(a, 0) == 0); - performs / N-1: division by zero
+    // assert(median(a) == 5); - median does not work on array of length 1
+    assert(top::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(rank(a, 5) == 1);
+    assert(dense_rank(a, 5) == 1);
+    // assert(percent_rank(a, 5) == 0); - division by zero
+    assert(cume_dist(a, 5) == 100);
+    // Into two buckets
+    assert(ntile(a, 2, 0) == 5);
+    assert(ntile(a, 2, 1) == 5);
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 5);
+    assert(percentile(a, 0) == 5);
+    assert(percentile(a, 1) == 5);
+    assert(percentile(a, 25) == 5);
+    assert(percentile(a, 50) == 5);
+    assert(percentile(a, 75) == 5);
+    assert(percentile(a, 99) == 5);
+    assert(percentile(a, 100) == 5);
+    assert(first(a) == 5);
+    assert(last(a) == 5);
+    return true;
+}
+
+def test_length_2() -> bool {
+    Array_u64<2> a = TEST_LENGTH_2; // = [5, 6]
+    u32 N = 2;
+    assert(count(a) == 2);
+    assert(count_distinct(a) == 2);
+    assert(distinct(a) == Array_u64 { values: [5, 6], n: 2 });
+    assert(sum(a) == 11);
+    assert(max(a) == 6);
+    assert(min(a) == 5);
+    assert(average(a) == 5); // 5.5
+    assert(population_variance(a) == 0); // 0.25
+    assert(sample_variance(a) == 0); // 0.3333
+    assert(population_stddev(a, 0) == 0); // 0.5
+    assert(sample_stddev(a, 0) == 0); // 0.5774
+    assert(median(a) == 5); // 5.5
+    assert(top::<N, 1>(a) == Array_u64 { values: [6], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [6, 5], n: 2 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [6], n: 1 });
+    assert(top_distinct::<N, 2>(a) == Array_u64 { values: [6, 5], n: 2 });
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [5, 6], n: 2 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [5], n: 1 });
+    assert(bottom_distinct::<N, 2>(a) == Array_u64 { values: [5, 6], n: 2 });
+    assert(rank(a, 5) == 1);
+    assert(rank(a, 6) == 2);
+    assert(dense_rank(a, 5) == 1);
+    assert(dense_rank(a, 6) == 2);
+    assert(percent_rank(a, 5) == 0);
+    assert(percent_rank(a, 6) == 100);
+    assert(cume_dist(a, 5) == 50);
+    assert(cume_dist(a, 6) == 100);
+    // Into two buckets
+    assert(ntile(a, 2, 0) == 5);
+    assert(ntile(a, 2, 1) == 6);
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 5);
+    // Into four buckets
+    assert(ntile(a, 4, 0) == 5);
+    assert(ntile(a, 4, 1) == 5);
+    assert(ntile(a, 4, 2) == 6);
+    assert(ntile(a, 4, 3) == 6);
+    // Into three buckets
+    assert(ntile(a, 3, 0) == 5);
+    assert(ntile(a, 3, 1) == 5);
+    assert(ntile(a, 3, 2) == 6);
+    assert(percentile(a, 0) == 5);
+    assert(percentile(a, 1) == 5);
+    assert(percentile(a, 25) == 5);
+    assert(percentile(a, 50) == 6);
+    assert(percentile(a, 75) == 6);
+    assert(percentile(a, 99) == 6);
+    assert(percentile(a, 100) == 6);
+    assert(first(a) == 5);
+    assert(last(a) == 6);
+    return true;
+}
+
+def test_distinct() -> bool {
+    Array_u64<10> a = TEST_DISTINCT; // = [7, 8, 55, 123, 456, 789, 1000, 1001, 1002, 1003]
+    u32 N = 10;
+    assert(count(a) == 10);
+    assert(count_distinct(a) == 10);
+    assert(distinct(a) == Array_u64 { values: [7, 8, 55, 123, 456, 789, 1000, 1001, 1002, 1003], n: 10 });
+    assert(sum(a) == 5444);
+    assert(max(a) == 1003);
+    assert(min(a) == 7);
+    assert(average(a) == 544); // 544.4
+    assert(population_variance(a) == 189702); // 189702.44
+    assert(sample_variance(a) == 210780); // 210780.488
+    assert(population_stddev(a, 435) == 435); // 435.548
+    assert(sample_stddev(a, 459) == 459); // 459.108
+    assert(median(a) == 622); // 622.5
+    assert(top::<N, 1>(a) == Array_u64 { values: [1003], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [1003, 1002], n: 2 });
+    assert(top::<N, 3>(a) == Array_u64 { values: [1003, 1002, 1001], n: 3 });
+    assert(top::<N, 5>(a) == Array_u64 { values: [1003, 1002, 1001, 1000, 789], n: 5 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [1003], n: 1 });
+    assert(top_distinct::<N, 3>(a) == Array_u64 { values: [1003, 1002, 1001], n: 3 });
+    assert(top_distinct::<N, 5>(a) == Array_u64 { values: [1003, 1002, 1001, 1000, 789], n: 5 });
+    assert(top_distinct::<N, 10>(a) == Array_u64 { values: [1003, 1002, 1001, 1000, 789, 456, 123, 55, 8, 7], n: 10 });
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [7, 8], n: 2 });
+    assert(bottom::<N, 3>(a) == Array_u64 { values: [7, 8, 55], n: 3 });
+    assert(bottom::<N, 5>(a) == Array_u64 { values: [7, 8, 55, 123, 456], n: 5 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(bottom_distinct::<N, 3>(a) == Array_u64 { values: [7, 8, 55], n: 3 });
+    assert(bottom_distinct::<N, 5>(a) == Array_u64 { values: [7, 8, 55, 123, 456], n: 5 });
+    assert(bottom_distinct::<N, 10>(a) == Array_u64 { values: [7, 8, 55, 123, 456, 789, 1000, 1001, 1002, 1003], n: 10 });
+    assert(rank(a, 7) == 1);
+    assert(rank(a, 8) == 2);
+    assert(rank(a, 55) == 3);
+    assert(rank(a, 1000) == 7);
+    assert(rank(a, 1003) == 10);
+    assert(dense_rank(a, 7) == 1);
+    assert(dense_rank(a, 8) == 2);
+    assert(dense_rank(a, 55) == 3);
+    assert(dense_rank(a, 1000) == 7);
+    assert(dense_rank(a, 1003) == 10);
+    assert(percent_rank(a, 7) == 0); // 0/9
+    assert(percent_rank(a, 8) == 11); // 1/9
+    assert(percent_rank(a, 55) == 22); // 2/9
+    assert(percent_rank(a, 1000) == 66); // 6/9
+    assert(percent_rank(a, 1003) == 100); // 9/9
+    assert(cume_dist(a, 7) == 10); // 1/10
+    assert(cume_dist(a, 8) == 20); // 2/10
+    assert(cume_dist(a, 55) == 30); // 3/10
+    assert(cume_dist(a, 1000) == 70); // 7/10
+    assert(cume_dist(a, 1003) == 100); // 10/10
+    // Into five buckets
+    assert(ntile(a, 5, 0) == 7);
+    assert(ntile(a, 5, 1) == 55);
+    assert(ntile(a, 5, 2) == 456);
+    assert(ntile(a, 5, 3) == 1000);
+    assert(ntile(a, 5, 4) == 1002);
+    assert(percentile(a, 0) == 7); // index 0
+    assert(percentile(a, 1) == 7); // index 0
+    assert(percentile(a, 25) == 55); // index 2
+    assert(percentile(a, 50) == 789); // index 5
+    assert(percentile(a, 75) == 1001); // index 7
+    assert(percentile(a, 99) == 1003); // index 9
+    assert(percentile(a, 100) == 1003); // index 9
+    assert(first(a) == 7);
+    assert(last(a) == 1003);
+    return true;
+}
+
+def test_same() -> bool {
+    Array_u64<10> a = TEST_SAME; // = [7, 7, 7, 7, 7, 7, 7, 7, 7, 7]
+    u32 N = 10;
+    assert(count(a) == 10);
+    assert(count_distinct(a) == 1);
+    assert(distinct(a) == Array_u64 { values: [7, 0, 0, 0, 0, 0, 0, 0, 0, 0], n: 1 });
+    assert(sum(a) == 70);
+    assert(max(a) == 7);
+    assert(min(a) == 7);
+    assert(average(a) == 7);
+    assert(population_variance(a) == 0);
+    assert(sample_variance(a) == 0);
+    assert(population_stddev(a, 0) == 0);
+    assert(sample_stddev(a, 0) == 0);
+    assert(median(a) == 7);
+    assert(top::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [7, 7], n: 2 });
+    assert(top::<N, 3>(a) == Array_u64 { values: [7, 7, 7], n: 3 });
+    assert(top::<N, 5>(a) == Array_u64 { values: [7, 7, 7, 7, 7], n: 5 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(top_distinct::<N, 3>(a) == Array_u64 { values: [7, 0, 0], n: 1 });
+    assert(top_distinct::<N, 5>(a) == Array_u64 { values: [7, 0, 0, 0, 0], n: 1 });
+    assert(top_distinct::<N, 10>(a) == Array_u64 { values: [7, 0, 0, 0, 0, 0, 0, 0, 0, 0], n: 1 });
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [7, 7], n: 2 });
+    assert(bottom::<N, 3>(a) == Array_u64 { values: [7, 7, 7], n: 3 });
+    assert(bottom::<N, 5>(a) == Array_u64 { values: [7, 7, 7, 7, 7], n: 5 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [7], n: 1 });
+    assert(bottom_distinct::<N, 3>(a) == Array_u64 { values: [7, 0, 0], n: 1 });
+    assert(bottom_distinct::<N, 5>(a) == Array_u64 { values: [7, 0, 0, 0, 0], n: 1 });
+    assert(bottom_distinct::<N, 10>(a) == Array_u64 { values: [7, 0, 0, 0, 0, 0, 0, 0, 0, 0], n: 1 });
+    assert(rank(a, 7) == 10); // XXX is this actually the expected value? check with Flink
+    assert(dense_rank(a, 7) == 1);
+    assert(percent_rank(a, 7) == 0);
+    assert(cume_dist(a, 7) == 100);
+    // Into five buckets
+    assert(ntile(a, 5, 0) == 7);
+    assert(ntile(a, 5, 1) == 7);
+    assert(ntile(a, 5, 2) == 7);
+    assert(ntile(a, 5, 3) == 7);
+    assert(ntile(a, 5, 4) == 7);
+    // Into two bucket
+    assert(ntile(a, 2, 0) == 7);
+    assert(ntile(a, 2, 1) == 7);
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 7);
+    assert(percentile(a, 0) == 7);
+    assert(percentile(a, 1) == 7);
+    assert(percentile(a, 25) == 7);
+    assert(percentile(a, 50) == 7);
+    assert(percentile(a, 75) == 7);
+    assert(percentile(a, 99) == 7);
+    assert(percentile(a, 100) == 7);
+    assert(first(a) == 7);
+    assert(last(a) == 7);
+    return true;
+}
+
+def test_odd_length() -> bool {
+    Array_u64<9> a = TEST_ODD_LENGTH; // = [0, 1, 4, 4, 4, 6, 7, 8, 20]
+    u32 N = 9;
+    assert(count(a) == 9);
+    assert(count_distinct(a) == 7);
+    assert(distinct(a) == Array_u64 { values: [0, 1, 4, 6, 7, 8, 20, 0, 0], n: 7 });
+    assert(sum(a) == 54);
+    assert(max(a) == 20);
+    assert(min(a) == 0);
+    assert(average(a) == 6);
+    assert(population_variance(a) == 30); // 30.4444
+    assert(sample_variance(a) == 34); // 34.25
+    assert(population_stddev(a, 5) == 5); // 5.5176
+    assert(sample_stddev(a, 5) == 5); // 5.8523
+    assert(median(a) == 4);
+    assert(top::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [20, 8], n: 2 });
+    assert(top::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top_distinct::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top_distinct::<N, 4>(a) == Array_u64 { values: [20, 8, 7, 6], n: 4 });
+    assert(top_distinct::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 6>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1], n: 6 });
+    assert(top_distinct::<N, 7>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1, 0], n: 7 });
+    assert(top_distinct::<N, 9>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1, 0, 0, 0], n: 7 });
+    // Note that the second-last 0 is an actual value and the last one is padding.
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [0, 1], n: 2 });
+    assert(bottom::<N, 3>(a) == Array_u64 { values: [0, 1, 4], n: 3 });
+    assert(bottom::<N, 5>(a) == Array_u64 { values: [0, 1, 4, 4, 4], n: 5 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom_distinct::<N, 2>(a) == Array_u64 { values: [0, 1], n: 2 });
+    assert(bottom_distinct::<N, 3>(a) == Array_u64 { values: [0, 1, 4], n: 3 });
+    assert(bottom_distinct::<N, 4>(a) == Array_u64 { values: [0, 1, 4, 6], n: 4 });
+    assert(bottom_distinct::<N, 5>(a) == Array_u64 { values: [0, 1, 4, 6, 7], n: 5 });
+    assert(bottom_distinct::<N, 9>(a) == Array_u64 { values: [0, 1, 4, 6, 7, 8, 20, 0, 0], n: 7 });
+    assert(rank(a, 0) == 1);
+    assert(rank(a, 1) == 2);
+    assert(rank(a, 4) == 5);
+    assert(rank(a, 6) == 6);
+    assert(rank(a, 20) == 9);
+    assert(dense_rank(a, 0) == 1);
+    assert(dense_rank(a, 1) == 2);
+    assert(dense_rank(a, 4) == 3);
+    assert(dense_rank(a, 6) == 4);
+    assert(dense_rank(a, 20) == 7);
+    assert(percent_rank(a, 0) == 0); // 0/8
+    assert(percent_rank(a, 1) == 12); // 1/8
+    assert(percent_rank(a, 4) == 25); // 2/8
+    assert(percent_rank(a, 6) == 62); // 5/8
+    assert(percent_rank(a, 20) == 100); // 8/8
+    assert(cume_dist(a, 0) == 11); // 1/9
+    assert(cume_dist(a, 1) == 22); // 2/9
+    assert(cume_dist(a, 4) == 55); // 5/9
+    assert(cume_dist(a, 6) == 66); // 6/9
+    assert(cume_dist(a, 20) == 100); // 9/9
+    // Into ten buckets
+    assert(ntile(a, 10, 0) == 0);
+    assert(ntile(a, 10, 1) == 0);
+    assert(ntile(a, 10, 2) == 1);
+    assert(ntile(a, 10, 3) == 4);
+    assert(ntile(a, 10, 4) == 4);
+    assert(ntile(a, 10, 5) == 4);
+    assert(ntile(a, 10, 6) == 6);
+    assert(ntile(a, 10, 7) == 7);
+    assert(ntile(a, 10, 8) == 8);
+    assert(ntile(a, 10, 9) == 20);
+    // Into nine buckets
+    assert(ntile(a, 9, 0) == 0);
+    assert(ntile(a, 9, 1) == 1);
+    assert(ntile(a, 9, 2) == 4);
+    assert(ntile(a, 9, 3) == 4);
+    assert(ntile(a, 9, 4) == 4);
+    assert(ntile(a, 9, 5) == 6);
+    assert(ntile(a, 9, 6) == 7);
+    assert(ntile(a, 9, 7) == 8);
+    assert(ntile(a, 9, 8) == 20);
+    // Into five buckets
+    assert(ntile(a, 5, 0) == 0); // index 0
+    assert(ntile(a, 5, 1) == 1); // index 1/5*9 = 1.8
+    assert(ntile(a, 5, 2) == 4); // index 2/5*9 = 3.6
+    assert(ntile(a, 5, 3) == 6); // index 3/5*9 = 5.4
+    assert(ntile(a, 5, 4) == 8); // index 4/5*9 = 7.2
+    // Into four buckets
+    assert(ntile(a, 4, 0) == 0); // index 0
+    assert(ntile(a, 4, 1) == 4); // index 1/4*9 = 2.25
+    assert(ntile(a, 4, 2) == 4); // index 2/4*9 = 4.5
+    assert(ntile(a, 4, 3) == 7); // index 3/4*9 = 6.75
+    // // Into three buckets
+    assert(ntile(a, 3, 0) == 0); // index 0
+    assert(ntile(a, 3, 1) == 4); // index 1/3*9 = 3
+    assert(ntile(a, 3, 2) == 7); // index 2/3*9 = 6
+    // // Into two buckets
+    assert(ntile(a, 2, 0) == 0); // index 0
+    assert(ntile(a, 2, 1) == 4); // index 1/2*9 = 4.5
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 0);
+    assert(percentile(a, 0) == 0); // index 0
+    assert(percentile(a, 1) == 0); // index 0
+    assert(percentile(a, 25) == 4); // index 2
+    assert(percentile(a, 50) == 4); // index 4
+    assert(percentile(a, 75) == 7); // index 7
+    assert(percentile(a, 99) == 20); // index 8
+    assert(percentile(a, 100) == 20); // index 8
+    assert(first(a) == 0);
+    assert(last(a) == 20);
+    return true;
+}
+
+def test_zero_padded() -> bool {
+    Array_u64<10> a = TEST_ZERO_PADDED; // = [0, 1, 4, 4, 4, 6, 7, 8, 20, 0]
+    u32 N = 10;
+    assert(count(a) == 9);
+    assert(count_distinct(a) == 7);
+    assert(distinct(a) == Array_u64 { values: [0, 1, 4, 6, 7, 8, 20, 0, 0, 0], n: 7 });
+    assert(sum(a) == 54);
+    assert(max(a) == 20);
+    assert(min(a) == 0);
+    assert(average(a) == 6);
+    assert(population_variance(a) == 30); // 30.4444
+    assert(sample_variance(a) == 34); // 34.25
+    assert(population_stddev(a, 5) == 5); // 5.5176
+    assert(sample_stddev(a, 5) == 5); // 5.8523
+    assert(median(a) == 4);
+    assert(top::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top::<N, 2>(a) == Array_u64 { values: [20, 8], n: 2 });
+    assert(top::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 1>(a) == Array_u64 { values: [20], n: 1 });
+    assert(top_distinct::<N, 3>(a) == Array_u64 { values: [20, 8, 7], n: 3 });
+    assert(top_distinct::<N, 4>(a) == Array_u64 { values: [20, 8, 7, 6], n: 4 });
+    assert(top_distinct::<N, 5>(a) == Array_u64 { values: [20, 8, 7, 6, 4], n: 5 });
+    assert(top_distinct::<N, 6>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1], n: 6 });
+    assert(top_distinct::<N, 7>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1, 0], n: 7 });
+    assert(top_distinct::<N, 9>(a) == Array_u64 { values: [20, 8, 7, 6, 4, 1, 0, 0, 0], n: 7 });
+    // // Note that the second-last 0 is an actual value and the last one is padding.
+    assert(bottom::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom::<N, 2>(a) == Array_u64 { values: [0, 1], n: 2 });
+    assert(bottom::<N, 3>(a) == Array_u64 { values: [0, 1, 4], n: 3 });
+    assert(bottom::<N, 5>(a) == Array_u64 { values: [0, 1, 4, 4, 4], n: 5 });
+    assert(bottom_distinct::<N, 1>(a) == Array_u64 { values: [0], n: 1 });
+    assert(bottom_distinct::<N, 2>(a) == Array_u64 { values: [0, 1], n: 2 });
+    assert(bottom_distinct::<N, 3>(a) == Array_u64 { values: [0, 1, 4], n: 3 });
+    assert(bottom_distinct::<N, 4>(a) == Array_u64 { values: [0, 1, 4, 6], n: 4 });
+    assert(bottom_distinct::<N, 5>(a) == Array_u64 { values: [0, 1, 4, 6, 7], n: 5 });
+    assert(bottom_distinct::<N, 9>(a) == Array_u64 { values: [0, 1, 4, 6, 7, 8, 20, 0, 0], n: 7 });
+    assert(rank(a, 0) == 1);
+    assert(rank(a, 1) == 2);
+    assert(rank(a, 4) == 5);
+    assert(rank(a, 6) == 6);
+    assert(rank(a, 20) == 9);
+    assert(dense_rank(a, 0) == 1);
+    assert(dense_rank(a, 1) == 2);
+    assert(dense_rank(a, 4) == 3);
+    assert(dense_rank(a, 6) == 4);
+    assert(dense_rank(a, 20) == 7);
+    assert(percent_rank(a, 0) == 0); // 0/8
+    assert(percent_rank(a, 1) == 12); // 1/8
+    assert(percent_rank(a, 4) == 25); // 2/8
+    assert(percent_rank(a, 6) == 62); // 5/8
+    assert(percent_rank(a, 20) == 100); // 8/8
+    assert(cume_dist(a, 0) == 11); // 1/9
+    assert(cume_dist(a, 1) == 22); // 2/9
+    assert(cume_dist(a, 4) == 55); // 5/9
+    assert(cume_dist(a, 6) == 66); // 6/9
+    assert(cume_dist(a, 20) == 100); // 9/9
+    // Into ten buckets
+    assert(ntile(a, 10, 0) == 0);
+    assert(ntile(a, 10, 1) == 0);
+    assert(ntile(a, 10, 2) == 1);
+    assert(ntile(a, 10, 3) == 4);
+    assert(ntile(a, 10, 4) == 4);
+    assert(ntile(a, 10, 5) == 4);
+    assert(ntile(a, 10, 6) == 6);
+    assert(ntile(a, 10, 7) == 7);
+    assert(ntile(a, 10, 8) == 8);
+    assert(ntile(a, 10, 9) == 20);
+    // Into nine buckets
+    assert(ntile(a, 9, 0) == 0);
+    assert(ntile(a, 9, 1) == 1);
+    assert(ntile(a, 9, 2) == 4);
+    assert(ntile(a, 9, 3) == 4);
+    assert(ntile(a, 9, 4) == 4);
+    assert(ntile(a, 9, 5) == 6);
+    assert(ntile(a, 9, 6) == 7);
+    assert(ntile(a, 9, 7) == 8);
+    assert(ntile(a, 9, 8) == 20);
+    // Into five buckets
+    assert(ntile(a, 5, 0) == 0); // index 0
+    assert(ntile(a, 5, 1) == 1); // index 1/5*9 = 1.8
+    assert(ntile(a, 5, 2) == 4); // index 2/5*9 = 3.6
+    assert(ntile(a, 5, 3) == 6); // index 3/5*9 = 5.4
+    assert(ntile(a, 5, 4) == 8); // index 4/5*9 = 7.2
+    // Into four buckets
+    assert(ntile(a, 4, 0) == 0); // index 0
+    assert(ntile(a, 4, 1) == 4); // index 1/4*9 = 2.25
+    assert(ntile(a, 4, 2) == 4); // index 2/4*9 = 4.5
+    assert(ntile(a, 4, 3) == 7); // index 3/4*9 = 6.75
+    // // Into three buckets
+    assert(ntile(a, 3, 0) == 0); // index 0
+    assert(ntile(a, 3, 1) == 4); // index 1/3*9 = 3
+    assert(ntile(a, 3, 2) == 7); // index 2/3*9 = 6
+    // // Into two buckets
+    assert(ntile(a, 2, 0) == 0); // index 0
+    assert(ntile(a, 2, 1) == 4); // index 1/2*9 = 4.5
+    // Into one bucket
+    assert(ntile(a, 1, 0) == 0);
+    assert(percentile(a, 0) == 0); // index 0
+    assert(percentile(a, 1) == 0); // index 0
+    assert(percentile(a, 25) == 4); // index 2
+    assert(percentile(a, 50) == 4); // index 4
+    assert(percentile(a, 75) == 7); // index 7
+    assert(percentile(a, 99) == 20); // index 8
+    assert(percentile(a, 100) == 20); // index 8
+    assert(first(a) == 0);
+    assert(last(a) == 20);
+    return true;
+}
+
+def test_unsorted() -> bool {
+    Array_u64<10> a = TEST_UNSORTED; // = [21, 7, 8, 9, 0, 30, 40, 33, 12, 8]
+    u32 N = 10;
+    assert(count(a) == 10);
+    assert(sum(a) == 168);
+    assert(average(a) == 16); // 16.8
+    assert(population_variance(a) == 160); // 160.96
+    assert(sample_variance(a) == 178); // 178.8444
+    assert(population_stddev(a, 12) == 12); // 12.6870
+    assert(sample_stddev(a, 13) == 13); // 13.3733
+    assert(first(a) == 21);
+    assert(last(a) == 8);
+    return true;
+}
+
+def test_bool_base() -> bool {
+    Array_bool<4> a = TEST_BOOL_BASE; // = [true, true, false, true]
+    assert(any(a) == true);
+    assert(every(a) == false);
+    return true;
+}
+
+def test_bool_all_true() -> bool {
+    Array_bool<4> a = TEST_BOOL_ALL_TRUE; // = [true, true, true, true]
+    assert(any(a) == true);
+    assert(every(a) == true);
+    return true;
+}
+
+def test_bool_all_false() -> bool {
+    Array_bool<4> a = TEST_BOOL_ALL_FALSE; // = [false, false, false, false]
+    assert(any(a) == false);
+    assert(every(a) == false);
+    return true;
+}
+
+def test_bool_zero_padded() -> bool {
+    Array_bool<6> a = TEST_BOOL_ZERO_PADDED; // = [true, true, true]; padded with [false, false, false]
+    assert(any(a) == true);
+    assert(every(a) == true);
+    return true;
+}
+
+def test_bitmap_base() -> bool {
+    Array_bitmap<3, 2> a = TEST_BITMAP_BASE; // = [[false, true, true], [true, false, true]]
+    assert(bitwise_and(a) == [false, false, true]);
+    assert(bitwise_or(a) == [true, true, true]);
+    assert(bitwise_xor(a) == [true, true, false]);
+    return true;
+}
+
+def main() {
+    // Note: we use unsigned integers, assuming that the numbers are always positive.
+    assert(test_base());
+    assert(test_length_1());
+    assert(test_length_2());
+    assert(test_distinct());
+    assert(test_same());
+    assert(test_odd_length());
+    assert(test_zero_padded());
+    assert(test_unsorted());
+
+    assert(test_bool_base());
+    assert(test_bool_all_true());
+    assert(test_bool_all_false());
+    assert(test_bool_zero_padded());
+
+    assert(test_bitmap_base());
+    return;
+}

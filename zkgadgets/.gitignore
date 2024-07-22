@@ -1,0 +1,15 @@
+**/out
+**/*.out
+**/abi.json
+**/*.abi.json
+**/*.r1cs
+**/*.ztf
+**/proving.key
+**/*.proving.key
+**/verification.key
+**/*.verification.key
+**/*.wtns
+**/witness
+**/*.witness
+**/proof.json
+**/*.proof.json
