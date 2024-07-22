@@ -12,7 +12,7 @@ use crate::input::{
 use crate::params::{Bls, Params};
 use chrono::Duration;
 use clap::Parser;
-use datajson::{Data, DataJson, SignedMessage};
+use debs_datajson::{Data, DataJson, SignedMessage};
 use hash_sign::sign::{self, BLSAggregateSignature};
 use params::{HashScheme, SigVariant};
 use serde_json;
@@ -95,7 +95,7 @@ fn main() {
     println!("> Parsing data.json");
     let data_file = fs::read_to_string(data_path).expect("could not read data.json");
     let data_json: DataJson = serde_json::from_str(&data_file).expect("could not parse data JSON");
-    let data: Data = datajson::data_from_json(&data_json);
+    let data: Data = debs_datajson::data_from_json(&data_json);
     // eprintln!("Data: {:?}", data);
     if data.historical.len() < n_historical {
         n_historical = data.historical.len();

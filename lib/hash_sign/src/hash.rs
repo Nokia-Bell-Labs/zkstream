@@ -1,4 +1,4 @@
-use crate::serialize::SerializableMessage;
+use crate::SerializableMessage;
 use ff::PrimeField;
 use poseidon_rs::{Fr, Poseidon};
 use rand::rngs::StdRng;
@@ -85,7 +85,7 @@ pub fn poseidon_unsalted<M: SerializableMessage>(message: &M) -> Fr {
 
 #[cfg(test)]
 mod tests {
-    use crate::serialize::Message;
+    use crate::message::Message;
     use chrono::{DateTime, TimeZone, Utc};
 
     use super::*;

@@ -1,21 +1,15 @@
-use crate::utils::{bigint_to_json_number, field_to_json_number};
 use babyjubjub_rs;
 use blst::min_pk as bls;
 use chrono::{DateTime, Utc};
 use ff::to_hex;
+use hash_sign::utils::{
+    bigint_to_json_number, field_to_json_number, json_number_to_bigint, json_number_to_field,
+};
 use hex;
 use k256::ecdsa;
-use num_bigint::BigInt;
 use poseidon_rs;
 use serde::{Deserialize, Serialize};
 use serde_json::Number;
-use utils::{json_number_to_bigint, json_number_to_field};
-
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
-
-pub mod utils;
 
 // Re-expose
 pub type Fr = poseidon_rs::Fr;
@@ -376,12 +370,7 @@ pub fn signed_message_from_json(m: &SignedMessageJson) -> SignedMessage {
 }
 
 /// An EdDSA-style signature.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EdDSASignature {
-    pub rx: Fr,
-    pub ry: Fr,
-    pub s: BigInt,
-}
+pub type EdDSASignature = hash_sign::sign::EdDSASignature;
 
 /// An EdDSA-style signature.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -414,15 +403,9 @@ pub fn eddsa_signature_from_json(s: &EdDSASignatureJson) -> EdDSASignature {
 }
 
 /// An ECDSA-style signature.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ECDSASignature {
-    /// 32 bytes
-    pub r: Vec<u8>,
-    /// 32 bytes
-    pub s: Vec<u8>,
-}
+pub type ECDSASignature = hash_sign::sign::ECDSASignature;
 
-/// A ECDSA-style signature.
+/// An ECDSA-style signature.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ECDSASignatureJson {
     // 32 bytes
@@ -465,17 +448,7 @@ pub fn bls_signature_from_json(s: &BLSSignatureJson) -> BLSSignature {
 }
 
 /// A message.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Message {
-    /// Message ID.
-    pub id: u64,
-    /// Device ID.
-    pub device_id: Vec<u8>,
-    /// Timestamp (UNIX timestamp).
-    pub timestamp: DateTime<Utc>,
-    /// Value.
-    pub value: u64,
-}
+pub type Message = hash_sign::message::Message;
 
 /// A message.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

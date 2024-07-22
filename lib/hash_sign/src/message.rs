@@ -1,5 +1,6 @@
 use crate::hash::{SaltPoseidon, SaltSHA256};
 use crate::utils::{int_to_field, uint_to_field};
+use crate::SerializableMessage;
 use chrono::{DateTime, Utc};
 use poseidon_rs::Fr;
 
@@ -14,13 +15,6 @@ pub struct Message {
     pub timestamp: DateTime<Utc>,
     /// Value.
     pub value: u64,
-}
-
-pub trait SerializableMessage {
-    fn to_bytes(&self) -> Vec<u8>;
-    fn to_bytes_salted(&self, salt: &SaltSHA256) -> Vec<u8>;
-    fn to_fields(&self) -> Vec<Fr>;
-    fn to_fields_salted(&self, salt: &SaltPoseidon) -> Vec<Fr>;
 }
 
 impl SerializableMessage for Message {

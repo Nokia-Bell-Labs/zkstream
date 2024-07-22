@@ -1,6 +1,7 @@
 //! This module contains code to parse ZoKrates outputs.
 
-use datajson::{utils::bytes_to_field, Fr, PublicKeyEdDSA};
+use debs_datajson::{Fr, PublicKeyEdDSA};
+use hash_sign::utils::bytes_to_field;
 
 pub type PublicKey = PublicKeyEdDSA;
 
@@ -216,7 +217,7 @@ pub fn parse_public_key(fields: &[Vec<u8>]) -> PublicKey {
 
 /// Parse bytes that encode a Poseidon hash (= 1 field).
 pub fn parse_hash_poseidon(bytes: &[u8]) -> HashPoseidon {
-    datajson::utils::bytes_to_field(bytes)
+    hash_sign::utils::bytes_to_field(bytes)
 }
 
 /// Parse bytes that encode a SHA256 hash (= 8 * u32).

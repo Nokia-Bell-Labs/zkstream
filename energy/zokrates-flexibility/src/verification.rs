@@ -8,7 +8,7 @@ use crate::proof::{
     MESSAGE_METADATA_SIZE, PUBLIC_KEY_SIZE,
 };
 use chrono::Timelike;
-use datajson::{Data, PublicKeyBLS, PublicKeyEdDSA, Slice};
+use debs_datajson::{Data, PublicKeyBLS, PublicKeyEdDSA, Slice};
 use hash_sign::sign::{verify_bls_signature, BLSAggregateSignature};
 use std::collections::HashSet;
 use std::fs;
@@ -309,7 +309,7 @@ fn verify_eddsa_signatures_poseidon(
         // Look up signature in data and re-create it.
         let signature =
             hash_sign::sign::convert_eddsa_signature(&message.signature_eddsa_poseidon_salted);
-        let hash_bi = datajson::utils::field_to_bigint(hash);
+        let hash_bi = hash_sign::utils::field_to_bigint(hash);
         // Verify signature.
         let t = Instant::now();
         assert!(babyjubjub_rs::verify(pk.clone(), signature, hash_bi));
@@ -332,7 +332,7 @@ fn verify_bls_signatures(
     // Convert hashes to bytes (SHA256 = bytes; Poseidon = field to bytes)
     let hashes_as_bytes: Vec<Vec<u8>> = hashes
         .iter()
-        .map(|h| datajson::utils::field_to_bytes(h))
+        .map(|h| hash_sign::utils::field_to_bytes(h))
         .collect::<Vec<_>>();
 
     let t = Instant::now();

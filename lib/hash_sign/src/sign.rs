@@ -1,5 +1,5 @@
-use crate::serialize::SerializableMessage;
 use crate::utils::{field_to_bigint, field_to_bytes};
+use crate::SerializableMessage;
 use aggsigs::schemes::bls;
 use babyjubjub_rs;
 use ff::PrimeField;
@@ -228,7 +228,7 @@ pub fn verify_bls_signature(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::serialize::Message;
+    use crate::message::Message;
     use babyjubjub_rs;
     use babyjubjub_rs::{Point, Signature};
     use chrono::{DateTime, TimeZone, Utc};

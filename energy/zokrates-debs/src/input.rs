@@ -1,7 +1,7 @@
 //! This module contains code to generate the inputs for the ZoKrates programs.
 
-use datajson::utils::{bigint_to_decimal_str, field_to_decimal_str};
-use datajson::{BLSSignature, Data, SignedMessage};
+use debs_datajson::{BLSSignature, Data, SignedMessage};
+use hash_sign::utils::{bigint_to_decimal_str, field_to_decimal_str};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde;
@@ -158,9 +158,7 @@ fn get_eddsa_poseidon_signatures(
 }
 
 /// Get message signatures from list of messages, using BLS and Poseidon (salted).
-pub(crate) fn get_bls_poseidon_signatures(
-    messages: &Vec<SignedMessage>,
-) -> Vec<BLSSignature> {
+pub(crate) fn get_bls_poseidon_signatures(messages: &Vec<SignedMessage>) -> Vec<BLSSignature> {
     messages
         .iter()
         .map(|m| m.signature_bls_poseidon_salted)
@@ -168,9 +166,7 @@ pub(crate) fn get_bls_poseidon_signatures(
 }
 
 /// Get message signatures from list of messages, using BLS and SHA256 (salted).
-pub(crate) fn get_bls_sha256_signatures(
-    messages: &Vec<SignedMessage>,
-) -> Vec<BLSSignature> {
+pub(crate) fn get_bls_sha256_signatures(messages: &Vec<SignedMessage>) -> Vec<BLSSignature> {
     messages
         .iter()
         .map(|m| m.signature_bls_sha256_salted)

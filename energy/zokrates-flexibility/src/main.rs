@@ -7,7 +7,7 @@ mod verification;
 use crate::input::{generate_inputs_for_flexibility, get_bls_poseidon_signatures};
 use crate::params::{Bls, Params};
 use clap::Parser;
-use datajson::{Data, DataJson, SignedMessage};
+use debs_datajson::{Data, DataJson, SignedMessage};
 use hash_sign::sign::{self, BLSAggregateSignature};
 use serde_json;
 use std::collections::HashMap;
@@ -89,7 +89,7 @@ fn main() {
     println!("> Parsing data.json");
     let data_file = fs::read_to_string(data_path).expect("could not read data.json");
     let data_json: DataJson = serde_json::from_str(&data_file).expect("could not parse data JSON");
-    let data: Data = datajson::data_from_json(&data_json);
+    let data: Data = debs_datajson::data_from_json(&data_json);
     // eprintln!("Data: {:?}", data);
 
     // Compile code.

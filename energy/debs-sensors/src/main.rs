@@ -2,7 +2,7 @@ use babyjubjub_rs::PrivateKey;
 use blst::min_pk as bls;
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use clap::Parser;
-use datajson::{
+use debs_datajson::{
     data_to_json, Data, Message, PublicKeyBLS, PublicKeyECDSA, PublicKeyEdDSA, SignedMessage, Slice,
 };
 use hash_sign::hash::{generate_salt, salt_to_fields};

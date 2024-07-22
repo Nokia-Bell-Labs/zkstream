@@ -3,6 +3,10 @@ resolver = "2"
 members = [
     "aggsigs",
     "lib/hash_sign",
+    "energy/debs-datajson",
+    "energy/debs-sensors",
+    "energy/zokrates-debs",
+    "energy/zokrates-flexibility",
 ]
 
 # Always optimize.
