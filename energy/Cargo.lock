@@ -5,7 +5,6 @@ version = 3
 [[package]]
 name = "aggsigs"
 version = "0.1.0"
-source = "git+https://gitlabe2.ext.net.nokia.com/crypto/aggsigs.git#b771ded6623cbc40b00b7a6bfe53580da270f811"
 dependencies = [
  "blake3",
  "blst",

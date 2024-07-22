@@ -16,8 +16,7 @@ poseidon-rs = "0.0.8"
 # Using the old version of ff_ce that is also used by poseidon-rs.
 ff = { package = "ff_ce", version = "0.11", features = ["derive"] }
 num-bigint = "0.4"
-# For how to install this, see README.md at root of this repo.
-aggsigs = { git = "https://gitlabe2.ext.net.nokia.com/crypto/aggsigs.git" }
+aggsigs = { path = "../../../aggsigs" }
 blst = "0.3.10"
 
 [dev-dependencies]
