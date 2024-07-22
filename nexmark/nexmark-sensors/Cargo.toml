@@ -12,7 +12,6 @@ serde_json = { version = "1.0.68", features = ["arbitrary_precision"] }
 clap = { version = "4.0.29", features = ["derive"] }
 rand = "0.8.5"
 hex = "0.4.3"
-csv = "1.2.1"
 k256 = { version = "0.13", features = ["serde"] }
 sha2 = "0.10.6"
 babyjubjub-rs = { version = "0.0.11" }
