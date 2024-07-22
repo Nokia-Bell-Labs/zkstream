@@ -3,8 +3,8 @@
 use crate::abi::Abi;
 use crate::input::get_bls_poseidon_signatures;
 use crate::params::Params;
-use datajson::SignedMessageJson;
 use hash_sign::sign::{self, BLSAggregateSignature};
+use nexmark_datajson::SignedMessageJson;
 use serde_json;
 use std::collections::HashMap;
 use std::fs;

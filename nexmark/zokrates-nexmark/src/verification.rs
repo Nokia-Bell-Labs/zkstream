@@ -4,11 +4,11 @@ use crate::params::{program_name, Bls, Params, SigVariant};
 use crate::proof::{self, HashPoseidon, MessageMetadata};
 use crate::zokrates;
 use crate::Options;
-use datajson::{
-    public_key_bls_from_json, public_key_eddsa_from_json, DataJson, Fr, PublicKeyBLS,
-    PublicKeyEdDSA, SignedMessageJson,
-};
 use hash_sign::sign::{verify_bls_signature, BLSAggregateSignature};
+use nexmark_datajson::{
+    eddsa_signature_from_json, public_key_bls_from_json, public_key_eddsa_from_json, DataJson, Fr,
+    PublicKeyBLS, PublicKeyEdDSA, SignedMessageJson,
+};
 use std::collections::HashSet;
 use std::time::Instant;
 
@@ -500,10 +500,10 @@ fn verify_eddsa_signatures_poseidon(
         let message = find_message_by_id(messages, metadata.message_id).expect("Message not found");
         // Hash is coming from proof, signature is coming from sensor (data.json).
         // Look up signature in data and re-create it.
-        let signature = hash_sign::sign::convert_eddsa_signature(
-            &datajson::eddsa_signature_from_json(&message.signature_eddsa_poseidon_salted),
-        );
-        let hash_bi = datajson::utils::field_to_bigint(hash);
+        let signature = hash_sign::sign::convert_eddsa_signature(&eddsa_signature_from_json(
+            &message.signature_eddsa_poseidon_salted,
+        ));
+        let hash_bi = hash_sign::utils::field_to_bigint(hash);
         // Verify signature.
         let t = Instant::now();
         assert!(babyjubjub_rs::verify(pk.clone(), signature, hash_bi));
@@ -526,7 +526,7 @@ fn verify_bls_signatures(
     // Convert hashes to bytes (SHA256 = bytes; Poseidon = field to bytes)
     let hashes_as_bytes: Vec<Vec<u8>> = hashes
         .iter()
-        .map(|h| datajson::utils::field_to_bytes(h))
+        .map(|h| hash_sign::utils::field_to_bytes(h))
         .collect::<Vec<_>>();
 
     let t = Instant::now();

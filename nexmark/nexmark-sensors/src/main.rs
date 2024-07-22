@@ -1,13 +1,13 @@
 use babyjubjub_rs::PrivateKey;
 use blst::min_pk as bls;
 use clap::Parser;
-use datajson::{
-    signed_message_to_json, Data, DataJson, Message, MessageValue, PublicKeyBLS, PublicKeyECDSA,
-    PublicKeyEdDSA, SignedMessage, SignedMessageJson,
-};
 use hash_sign::hash::{generate_salt, salt_to_fields};
 use hash_sign::{hash, sign};
 use k256::ecdsa;
+use nexmark_datajson::{
+    signed_message_to_json, Data, DataJson, Message, MessageValue, PublicKeyBLS, PublicKeyECDSA,
+    PublicKeyEdDSA, SignedMessage, SignedMessageJson,
+};
 use std::fs::File;
 use std::path::PathBuf;
 
@@ -39,7 +39,7 @@ fn main() {
         PrivateKey::import(hex::decode(PRIVATE_KEY_EDDSA_HEX).unwrap()).unwrap();
     let public_key_eddsa = private_key_eddsa.public();
     let public_key_eddsa_json =
-        datajson::public_key_eddsa_to_json(&PublicKeyEdDSA(public_key_eddsa));
+        nexmark_datajson::public_key_eddsa_to_json(&PublicKeyEdDSA(public_key_eddsa));
 
     // Generate private and public key for use with ECDSA.
     const PRIVATE_KEY_ECDSA_HEX: &'static str =
@@ -48,7 +48,7 @@ fn main() {
         ecdsa::SigningKey::from_slice(&hex::decode(PRIVATE_KEY_ECDSA_HEX).unwrap()).unwrap();
     let public_key_ecdsa = private_key_ecdsa.verifying_key();
     let public_key_ecdsa_json =
-        datajson::public_key_ecdsa_to_json(&PublicKeyECDSA(*public_key_ecdsa));
+        nexmark_datajson::public_key_ecdsa_to_json(&PublicKeyECDSA(*public_key_ecdsa));
 
     // Generate private and public key for use with BLS.
     const PRIVATE_KEY_BLS: &'static [u8] = &[
@@ -62,7 +62,8 @@ fn main() {
         sk: private_key_bls,
         pk: public_key_bls,
     };
-    let public_key_bls_json = datajson::public_key_bls_to_json(&PublicKeyBLS(public_key_bls));
+    let public_key_bls_json =
+        nexmark_datajson::public_key_bls_to_json(&PublicKeyBLS(public_key_bls));
 
     // Read input file.
     let file = File::open(input_path).expect("could not open JSON file");

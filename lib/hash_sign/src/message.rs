@@ -4,7 +4,10 @@ use crate::SerializableMessage;
 use chrono::{DateTime, Utc};
 use poseidon_rs::Fr;
 
-/// A message with as payload a single u64 value.
+/// A simple message, with as payload a single u64 value.
+///
+/// You can also define your own message type, as long as it implements the
+/// `SerializableMessage` trait.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Message {
     /// Message ID.

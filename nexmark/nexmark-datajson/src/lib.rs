@@ -1,20 +1,19 @@
-use crate::utils::{bigint_to_json_number, field_to_json_number};
 use babyjubjub_rs;
 use blst::min_pk as bls;
 use ff::to_hex;
+use hash_sign::{
+    hash::{SaltPoseidon, SaltSHA256},
+    utils::{
+        bigint_to_json_number, field_to_json_number, int_to_field, json_number_to_bigint,
+        json_number_to_field, uint_to_field,
+    },
+    SerializableMessage,
+};
 use hex;
 use k256::ecdsa;
-use num_bigint::BigInt;
 use poseidon_rs;
 use serde::{Deserialize, Serialize};
 use serde_json::Number;
-use utils::{json_number_to_bigint, json_number_to_field};
-
-#[cfg(test)]
-#[macro_use]
-extern crate lazy_static;
-
-pub mod utils;
 
 // Re-expose
 pub type Fr = poseidon_rs::Fr;
@@ -345,12 +344,7 @@ pub fn signed_message_from_json(m: &SignedMessageJson) -> SignedMessage {
 }
 
 /// An EdDSA-style signature.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EdDSASignature {
-    pub rx: Fr,
-    pub ry: Fr,
-    pub s: BigInt,
-}
+pub type EdDSASignature = hash_sign::sign::EdDSASignature;
 
 /// An EdDSA-style signature.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -383,13 +377,7 @@ pub fn eddsa_signature_from_json(s: &EdDSASignatureJson) -> EdDSASignature {
 }
 
 /// An ECDSA-style signature.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ECDSASignature {
-    /// 32 bytes
-    pub r: Vec<u8>,
-    /// 32 bytes
-    pub s: Vec<u8>,
-}
+pub type ECDSASignature = hash_sign::sign::ECDSASignature;
 
 /// A ECDSA-style signature.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -453,6 +441,71 @@ pub struct Message {
     pub timestamp: i64,
     /// Value.
     pub value: MessageValue,
+}
+
+impl SerializableMessage for Message {
+    /// Serialize a message to bytes, e.g. to sign using SHA256, unsalted.
+    ///
+    /// This converts the message to 24 bytes: timestamp ++ value,
+    /// where timestamp = 8 bytes (BE), value = 8 bytes (BE) + 8 bytes (BE).
+    fn to_bytes(&self) -> Vec<u8> {
+        let timestamp: [u8; 8] = self.timestamp.to_be_bytes();
+        let value1: [u8; 8] = self.value.auction.to_be_bytes();
+        let value2: [u8; 8] = self.value.price.to_be_bytes();
+        let mut data = [0u8; 24];
+        data[0..8].copy_from_slice(&timestamp);
+        data[8..16].copy_from_slice(&value1);
+        data[16..24].copy_from_slice(&value2);
+        // eprintln!("data: {:?}", data);
+        data.to_vec()
+    }
+
+    /// Serialize a message to bytes, e.g. to sign using SHA256, with salt.
+    ///
+    /// This converts the message to 88 bytes: timestamp ++ value ++ salt,
+    /// where timestamp = 8 bytes (BE), value = 8 bytes (BE) + 8 bytes (BE), salt = 64 bytes.
+    fn to_bytes_salted(&self, salt: &SaltSHA256) -> Vec<u8> {
+        let timestamp: [u8; 8] = self.timestamp.to_be_bytes();
+        let value1: [u8; 8] = self.value.auction.to_be_bytes();
+        let value2: [u8; 8] = self.value.price.to_be_bytes();
+        let mut data = [0u8; 88];
+        data[0..8].copy_from_slice(&timestamp);
+        data[8..16].copy_from_slice(&value1);
+        data[16..24].copy_from_slice(&value2);
+        data[24..88].copy_from_slice(salt);
+        // eprintln!("data: {:?}", data);
+        data.to_vec()
+    }
+
+    /// Serialize a message to fields, e.g. to sign using Poseidon, unsalted.
+    ///
+    /// Result = [timestamp, value]
+    /// where timestamp = field, value = field.
+    fn to_fields(&self) -> Vec<Fr> {
+        let timestamp: Fr = int_to_field(self.timestamp);
+        assert!(
+            self.value.auction < (1 << 32),
+            "auction id must be less than 2^32"
+        );
+        assert!(self.value.price < (1 << 32), "price must be less than 2^32");
+        let value: Fr = uint_to_field((self.value.auction << 32) + self.value.price);
+        [timestamp, value].to_vec()
+    }
+
+    /// Serialize a message to fields, e.g. to sign using Poseidon, with salt.
+    ///
+    /// Result = poseidon(timestamp, value, salt[0], salt[1], salt[2], salt[3])
+    /// where timestamp = field, value = field, salt = 4 fields.
+    fn to_fields_salted(&self, salt: &SaltPoseidon) -> Vec<Fr> {
+        let timestamp: Fr = int_to_field(self.timestamp);
+        assert!(
+            self.value.auction < (1 << 32),
+            "auction id must be less than 2^32"
+        );
+        assert!(self.value.price < (1 << 32), "price must be less than 2^32");
+        let value: Fr = uint_to_field((self.value.auction << 32) + self.value.price);
+        [timestamp, value, salt[0], salt[1], salt[2], salt[3]].to_vec()
+    }
 }
 
 #[cfg(test)]
@@ -528,13 +581,13 @@ mod tests {
         assert_eq!(data.auctions[0].initialBid, 41322);
         assert_eq!(data.auctions[1].id, 2);
         assert_eq!(data.auctions[1].initialBid, 34345);
-        assert_eq!(data.bids.len(), 2);
-        assert_eq!(data.bids[0].message.value.auction, 2);
-        assert_eq!(data.bids[0].message.device_id, 36);
+        assert_eq!(data.bids.len(), 3);
+        assert_eq!(data.bids[0].message.value.auction, 25);
+        assert_eq!(data.bids[0].message.device_id, 3);
         assert_eq!(data.bids[0].message.value.price, 29425);
         assert_eq!(data.bids[0].message.timestamp, 1565337994551);
-        assert_eq!(data.bids[1].message.value.auction, 230);
-        assert_eq!(data.bids[1].message.device_id, 36);
+        assert_eq!(data.bids[1].message.value.auction, 23);
+        assert_eq!(data.bids[1].message.device_id, 3);
         assert_eq!(data.bids[1].message.value.price, 2841);
         assert_eq!(data.bids[1].message.timestamp, 1565337994552);
     }

@@ -7,6 +7,9 @@ members = [
     "energy/debs-sensors",
     "energy/zokrates-debs",
     "energy/zokrates-flexibility",
+    "nexmark/nexmark-datajson",
+    "nexmark/nexmark-sensors",
+    "nexmark/zokrates-nexmark",
 ]
 
 # Always optimize.
