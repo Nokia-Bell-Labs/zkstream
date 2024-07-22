@@ -1,0 +1,44 @@
+from "./shared" import
+    MessageMetadata,
+    Bids,
+    Bid,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    hashMessagePoseidon as hashMessage,
+    hashOutputPoseidon as hashOutput;
+from "./gadgets" import
+    count;
+from "utils/casts" import cast;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+def main(
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private Bids<N_MESSAGES> bids,
+    // Salts of messages
+    private Salt[N_MESSAGES] salts,
+    // Salt to be used for output
+    private Salt outputSalt
+// count (private), auction (public), hashed count (public), hashed messages (public)
+) -> (u64, u64, Hash, Hash[N_MESSAGES]) {
+    // 1. Calculate hashes
+    Hash[N_MESSAGES] mut hashes = [0; N_MESSAGES];
+    for u32 i in 0..N_MESSAGES {
+        hashes[i] = hashMessage(msgs[i], bids.values[i], salts[i]);
+    }
+    // 2. Check that the auction ID is the same for all messages
+    u64 auction = bids.values[0].auction;
+    for u32 i in 1..N_MESSAGES {
+        bool isZero = i >= bids.n;
+        assert(isZero || bids.values[i].auction == auction);
+    }
+    // 3. Calculate count
+    u32 cnt_u32 = count(bids);
+    u64 cnt_u64 = cast(cnt_u32);
+    // 4. Hash outputs
+    Hash cnt_hashed = hashOutput(cnt_u64, outputSalt);
+    return (cnt_u64, auction, cnt_hashed, hashes);
+}

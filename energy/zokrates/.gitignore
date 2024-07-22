@@ -1,0 +1,18 @@
+target/
+
+universal_setup.dat
+historical
+challenge1
+**/*.tmp.zok
+**/*.out
+**/*.abi.json
+**/*.r1cs
+**/*.ztf
+**/*.proving.key
+**/*.verification.key
+**/*.wtns
+**/*.witness
+**/*.proof.json
+# Witness files
+challenge1.*.json
+historical.*.json

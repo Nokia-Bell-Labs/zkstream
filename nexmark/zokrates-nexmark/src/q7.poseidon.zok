@@ -1,0 +1,35 @@
+from "./shared" import
+    PublicKey,
+    Signature,
+    MessageMetadata,
+    Bids,
+    Bid,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    verifySignaturePoseidonEddsa as verifySignature;
+from "./gadgets" import
+    max;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+def main(
+    // Public key of sensor
+    PublicKey publicKey,
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private Bids<N_MESSAGES> bids,
+    // Signatures of messages
+    private Signature[N_MESSAGES] signatures
+// outputs (public)
+) -> (u64, u64) {
+    // 1. Verify all signatures
+    for u32 i in 0..N_MESSAGES {
+        bool isZero = i >= bids.n;
+        assert(verifySignature(publicKey, msgs[i], bids.values[i], signatures[i], isZero));
+    }
+    // 2. Calculate maximum
+    Bid maximum = max(bids);
+    return (maximum.price, maximum.auction);
+}

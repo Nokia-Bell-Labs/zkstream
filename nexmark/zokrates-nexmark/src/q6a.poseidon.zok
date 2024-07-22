@@ -1,0 +1,46 @@
+from "./shared" import
+    PublicKey,
+    Signature,
+    MessageMetadata,
+    Bids,
+    Bid,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    verifySignaturePoseidonEddsa as verifySignature,
+    hashOutputPoseidon as hashOutput;
+from "./gadgets" import
+    max;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+def main(
+    // Public key of sensor
+    PublicKey publicKey,
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private Bids<N_MESSAGES> bids,
+    // Signatures of messages
+    private Signature[N_MESSAGES] signatures,
+    // Salt to be used for output
+    private Salt outputSalt
+// price (private), auction (public), hashed price (public)
+) -> (u64, u64, Hash) {
+    // 1. Verify all signatures
+    for u32 i in 0..N_MESSAGES {
+        bool isZero = i >= bids.n;
+        assert(verifySignature(publicKey, msgs[i], bids.values[i], signatures[i], isZero));
+    }
+    // 2. Check that the auction ID is the same for all messages
+    u64 auction = bids.values[0].auction;
+    for u32 i in 1..N_MESSAGES {
+        bool isZero = i >= bids.n;
+        assert(isZero || bids.values[i].auction == auction);
+    }
+    // 3. Calculate maximum
+    Bid maximum = max(bids);
+    // 4. Hash outputs
+    Hash price_hashed = hashOutput(maximum.price, outputSalt);
+    return (maximum.price, auction, price_hashed);
+}

@@ -1,0 +1,32 @@
+from "./shared" import
+    MessageMetadata,
+    U64s,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    hashMessagePoseidon as hashMessage,
+    hashOutputPoseidon as hashOutput;
+from "./gadgets" import
+    max;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+def main(
+    // Hashes of messages
+    Hash[N_MESSAGES] valsHashes,
+    // Values of messages
+    private U64s<N_MESSAGES> vals,
+    // Salts of messages
+    private Salt[N_MESSAGES] salts
+// output (public)
+) -> u64 {
+    // 1. Check hashes of values
+    for u32 i in 0..N_MESSAGES {
+        Hash actual = hashOutput(vals.values[i], salts[i]);
+        Hash expected = valsHashes[i];
+        assert(i < vals.n ? actual == expected : true);
+    }
+    // 2. Calculate output
+    u64 avg = max(vals);
+    return avg;
+}

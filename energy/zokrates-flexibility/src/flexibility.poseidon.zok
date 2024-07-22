@@ -1,0 +1,48 @@
+from "./shared" import
+    PublicKey,
+    Signature,
+    MessageMetadata,
+    MessageValue,
+    averageLoad,
+    verifySignaturePoseidonEddsa as verifySignature;
+
+// Number of "before" messages.
+const u32 N_BEFORE = 120;
+
+// Number of "after" messages.
+const u32 N_AFTER = 60;
+
+def main(
+    // Public key of sensor
+    PublicKey publicKey,
+    // Metadata of before messages
+    MessageMetadata[N_BEFORE] msgsBefore,
+    // Metadata of after messages
+    MessageMetadata[N_AFTER] msgsAfter,
+    // Values of before messages
+    private MessageValue[N_BEFORE] valsBefore,
+    // Values of after messages
+    private MessageValue[N_AFTER] valsAfter,
+    // Signatures of before messages
+    private Signature[N_BEFORE] signaturesBefore,
+    // Signatures of after messages
+    private Signature[N_AFTER] signaturesAfter
+// difference (public), sign (public)
+) -> (u64, bool) {
+    // 1. Verify all signatures
+    for u32 i in 0..N_BEFORE {
+        assert(verifySignature(publicKey, msgsBefore[i], valsBefore[i], signaturesBefore[i], false));
+    }
+    for u32 i in 0..N_AFTER {
+        assert(verifySignature(publicKey, msgsAfter[i], valsAfter[i], signaturesAfter[i], false));
+    }
+    // 3. Calculate average load of before messages
+    // TODO signed
+    u64 old = averageLoad::<N_BEFORE>(valsBefore, N_BEFORE);
+    // 4. Calculate average load of after messages
+    u64 new = averageLoad::<N_AFTER>(valsAfter, N_AFTER);
+    // 5. Calculate difference
+    bool sign = new > old;
+    u64 diff = if (new > old) { new - old } else { old - new };
+    return (diff, sign);
+}

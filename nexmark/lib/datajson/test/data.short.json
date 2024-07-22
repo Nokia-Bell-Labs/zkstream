@@ -1,0 +1,89 @@
+{
+  "public_key_eddsa": {
+    "x_hex": "1eb37a21d81104513e8d2efd635ea79ee98b9aeaceeed2fa4e85ba3cec8074e9",
+    "x_field": 13886494007580326243456458651740327726561189795419074881554172413570220848361,
+    "y_hex": "13249c46afb99aaed85e30fac7ec0681a769af430c5db31c315979cb1b568611",
+    "y_field": 8658629195546453437207240821600061126268143005489909763617286169930275128849
+  },
+  "public_key_ecdsa": {
+    "x_bytes": [
+      99, 28, 131, 2, 172, 118, 190, 150, 3, 133, 234, 200, 86, 139, 210, 194,
+      111, 150, 201, 100, 31, 184, 164, 142, 212, 27, 126, 227, 229, 231, 35, 25
+    ],
+    "x_hex": "631c8302ac76be960385eac8568bd2c26f96c9641fb8a48ed41b7ee3e5e72319",
+    "y_bytes": [
+      54, 21, 188, 216, 15, 131, 193, 189, 70, 29, 119, 177, 236, 69, 128, 142,
+      25, 253, 32, 12, 50, 188, 199, 168, 125, 177, 244, 236, 23, 82, 43, 57
+    ],
+    "y_hex": "3615bcd80f83c1bd461d77b1ec45808e19fd200c32bcc7a87db1f4ec17522b39"
+  },
+  "public_key_bls": [
+    168, 179, 127, 95, 141, 103, 59, 248, 193, 7, 1, 15, 193, 209, 177, 54, 61,
+    155, 185, 239, 137, 159, 162, 38, 198, 61, 74, 124, 62, 248, 75, 236, 108,
+    12, 99, 120, 48, 70, 203, 84, 130, 180, 217, 135, 191, 174, 228, 168
+  ],
+  "persons": [
+    {
+      "id": 1,
+      "name": "Person 1",
+      "emailAddress": "mail1@nokia.com",
+      "creditCard": "1234567890",
+      "city": "Seattle",
+      "state": "WA",
+      "dateTime": 1565337980015,
+      "extra": "Person 1"
+    },
+    {
+      "id": 2,
+      "name": "Person 2",
+      "emailAddress": "mail2@nokia.com",
+      "creditCard": "1234567890",
+      "city": "Redmond",
+      "state": "CA",
+      "dateTime": 1565337980016,
+      "extra": "Person 2"
+    }
+  ],
+  "auctions": [
+    {
+      "id": 1,
+      "itemName": "Item 1",
+      "description": "Item 1",
+      "initialBid": 41322,
+      "reserve": 70976,
+      "dateTime": 1565337987636,
+      "expires": 1565338487636,
+      "seller": 50,
+      "category": 7,
+      "extra": "Auction 1"
+    },
+    {
+      "id": 2,
+      "itemName": "Item 2",
+      "description": "Item 2",
+      "initialBid": 34345,
+      "reserve": 56791,
+      "dateTime": 1565337987637,
+      "expires": 1565338487637,
+      "seller": 49,
+      "category": 5,
+      "extra": "Auction 2"
+    }
+  ],
+  "bids": [
+    {
+      "auction": 2,
+      "bidder": 36,
+      "price": 29425,
+      "dateTime": 1565337994551,
+      "extra": "Bid 0"
+    },
+    {
+      "auction": 230,
+      "bidder": 36,
+      "price": 2841,
+      "dateTime": 1565337994552,
+      "extra": "Bid 1"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+target/
+
+universal_setup.dat
+q1
+**/*.tmp.zok
+**/*.out
+**/*.abi.json
+**/*.r1cs
+**/*.ztf
+**/*.proving.key
+**/*.verification.key
+**/*.wtns
+**/*.witness
+**/*.proof.json
+# Witness files
+q*.*.json

@@ -1,0 +1,48 @@
+from "./shared" import
+    MessageMetadata,
+    MessageValue,
+    averageLoad,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    hashMessagePoseidon as hashMessage;
+
+// Number of "before" messages.
+const u32 N_BEFORE = 120;
+
+// Number of "after" messages.
+const u32 N_AFTER = 60;
+
+def main(
+    // Metadata of before messages
+    MessageMetadata[N_BEFORE] msgsBefore,
+    // Metadata of after messages
+    MessageMetadata[N_AFTER] msgsAfter,
+    // Values of before messages
+    private MessageValue[N_BEFORE] valsBefore,
+    // Values of after messages
+    private MessageValue[N_AFTER] valsAfter,
+    // Salts of before messages
+    private Salt[N_BEFORE] saltsBefore,
+    // Salts of after messages
+    private Salt[N_AFTER] saltsAfter
+// difference (public), sign (public), hashed before messages (public),
+// hashed after messages (public)
+) -> (u64, bool, Hash[N_BEFORE], Hash[N_AFTER]) {
+    // 1. Calculate hashes
+    Hash[N_BEFORE] mut hashesBefore = [0; N_BEFORE];
+    for u32 i in 0..N_BEFORE {
+        hashesBefore[i] = hashMessage(msgsBefore[i], valsBefore[i], saltsBefore[i]);
+    }
+    Hash[N_AFTER] mut hashesAfter = [0; N_AFTER];
+    for u32 i in 0..N_AFTER {
+        hashesAfter[i] = hashMessage(msgsAfter[i], valsAfter[i], saltsAfter[i]);
+    }
+    // 2. Calculate average load of before messages
+    u64 old = averageLoad::<N_BEFORE>(valsBefore, N_BEFORE);
+    // 3. Calculate average load of after messages
+    u64 new = averageLoad::<N_AFTER>(valsAfter, N_AFTER);
+    // 4. Calculate difference
+    bool sign = new > old;
+    u64 diff = if (new > old) { new - old } else { old - new };
+    return (diff, sign, hashesBefore, hashesAfter);
+}

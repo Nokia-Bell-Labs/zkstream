@@ -1,0 +1,25 @@
+[package]
+name = "hash-sign"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+datajson = { path = "../datajson" }
+lazy_static = "1.4.0"
+rand = "0.8.5"
+hex = "0.4.3"
+k256 = { version = "0.13", features = ["serde"] }
+sha2 = "0.10.6"
+babyjubjub-rs = { version = "0.0.11" }
+# Using the old version of poseidon-rs that is used by babyjubjub-rs.
+poseidon-rs = "0.0.8"
+# Using the old version of ff_ce that is also used by poseidon-rs.
+ff = { package = "ff_ce", version = "0.11", features = ["derive"] }
+num-bigint = "0.4"
+# For how to install this, see README.md at root of this repo.
+aggsigs = { git = "https://gitlabe2.ext.net.nokia.com/crypto/aggsigs.git" }
+blst = "0.3.10"
+
+[dev-dependencies]
+chrono = { version = "0.4.24", features = ["alloc", "std", "clock", "serde"] }
+

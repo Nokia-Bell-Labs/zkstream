@@ -1,0 +1,17 @@
+[package]
+name = "zokrates"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+datajson = { path = "../lib/datajson" }
+hash-sign = { path = "../lib/hash_sign" }
+lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = { version = "1.0.68", features = ["arbitrary_precision"] }
+serde_tuple = "0.5.0"
+clap = { version = "4.0.29", features = ["derive"] }
+rand = "0.8.5"
+hex = "0.4.3"
+chrono = { version = "0.4.24", features = ["alloc", "std", "clock", "serde"] }
+babyjubjub-rs = { version = "0.0.11" }

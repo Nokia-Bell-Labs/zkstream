@@ -1,0 +1,35 @@
+from "./shared" import
+    MessageMetadata,
+    Bids,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    hashMessagePoseidon as hashMessage;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+// Conversion rate.
+// const u64 CONVERSION_RATE_USD_TO_EUR = 0.898900645;
+const u64 CONVERSION_RATE_USD_TO_EUR = 898900645; // / 10^9
+
+def main(
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private Bids<N_MESSAGES> bids,
+    // Salts of messages
+    private Salt[N_MESSAGES] salts
+// output (public), hashed messages (public)
+) -> (u64[N_MESSAGES], Hash[N_MESSAGES]) {
+    // 1. Calculate hashes
+    Hash[N_MESSAGES] mut hashes = [0; N_MESSAGES];
+    for u32 i in 0..N_MESSAGES {
+        hashes[i] = hashMessage(msgs[i], bids.values[i], salts[i]);
+    }
+    // 2. Calculate output
+    u64[N_MESSAGES] mut outputs = [0; N_MESSAGES];
+    for u32 i in 0..N_MESSAGES {
+        outputs[i] = (bids.values[i].price * CONVERSION_RATE_USD_TO_EUR) / 1000000000;
+    }
+    return (outputs, hashes);
+}

@@ -1,0 +1,85 @@
+import "ecc/edwardsAdd" as add;
+import "ecc/edwardsScalarMult" as scalarMult;
+import "ecc/edwardsOnCurve" as onCurve;
+import "ecc/edwardsOrderCheck" as orderCheck;
+from "ecc/babyjubjubParams" import BabyJubJubParams;
+import "utils/pack/bool/nonStrictUnpack256" as unpack256bool;
+
+// BabyJubJub parameters.
+//
+// Same as Circom and babyjubjub-rs. Compared to the version from the stdlib of
+// Zokrates, the generator was changed.
+const BabyJubJubParams BABYJUBJUB_PARAMS = BabyJubJubParams {
+    // Order of the curve for reference: 21888242871839275222246405745257275088614511777268538073601725287587578984328
+    JUBJUB_C: 8, // Cofactor = 2^c
+    JUBJUB_A: 168700, // Coefficient a
+    JUBJUB_D: 168696, // Coefficient d
+
+    // Montgomery parameters
+    MONT_A: 168698,
+    MONT_B: 1,
+
+    // Point at infinity
+    INFINITY: [0, 1],
+
+    // Generator.
+    // This is the base point B in the standard, multiplied by 2^c.
+    // Changed from Zokrates' default.
+    Gu: 5299619240641551281634865583518297030282874472190772894086521144482721001553,
+    Gv: 16950150798460657717958625567821834550301663161624707787222815936182638968203
+};
+
+/// Verify the EdDSA signature `(R, S)` for the provided public key `A` and hash `h`.
+///
+/// `h` should be calculated as `hash(R || A || msg)`.
+///
+/// Arguments:
+/// - R (curve point): part of the signature.
+/// - S (field element): signature.
+/// - A (curve point): public key.
+/// - h: 256-bit hash of R || A || message. (Can be SHA256, Poseidon...)
+///
+/// Note: to calculate `h`, Zokrates' stdlib uses only R.x and A.x, i.e.
+/// hash(R.x || A.x || msg). Others (Circom, babyjubjub-rs) use both x and y values of
+/// R and A, i.e. hash(R.x || R.y || A.x || A.y || msg).
+def main(field[2] R, field S, field[2] A, bool[256] h) -> bool {
+    // The quoted passages below are from the RFC:
+    // https://datatracker.ietf.org/doc/html/rfc8032#section-3.4
+
+    // > To verify a PureEdDSA signature ENC(R) || ENC(S) on a message M under
+    // > a public key ENC(A), proceed as follows.
+    // > Parse the inputs so that A and R are elements of E,
+    // A is already parsed, and checking that it is an element of E can happen outside
+    // proof as it is public.
+    // R is parsed; here we check that it is an element of E:
+    assert(onCurve(R, BABYJUBJUB_PARAMS));
+    assert(orderCheck(R, BABYJUBJUB_PARAMS));
+    // > and S is a member of the set {0, 1, ..., L-1}.
+    // Convert S from field element to bits.
+    bool[256] sBits = unpack256bool(S);
+
+    // > Compute h = H(ENC(R) || ENC(A) || M),
+    // This happens outside this function, resulting in `h`.
+
+    // > and check the group equation
+    // > [2^c * S] B = 2^c * R + [2^c * h] A in E.
+    // 2^c = 8 for BabyJubJub.
+
+    // Left hand side of the equation.
+    field[2] B8 = [BABYJUBJUB_PARAMS.Gu, BABYJUBJUB_PARAMS.Gv];
+    field[2] lhs = scalarMult(sBits, B8, BABYJUBJUB_PARAMS);
+
+    // Right hand side of the equation.
+    // Multiply A by 2^c = 8, and calculate 2^c * h * A.
+    field[2] A2 = add(A, A, BABYJUBJUB_PARAMS);
+    field[2] A4 = add(A2, A2, BABYJUBJUB_PARAMS);
+    field[2] A8 = add(A4, A4, BABYJUBJUB_PARAMS);
+    field[2] hA = scalarMult(h, A8, BABYJUBJUB_PARAMS);
+    // R is already multiplied by 2^c = 8.
+    field[2] rhs = add(R, hA, BABYJUBJUB_PARAMS);
+
+    // > The signature is rejected if parsing fails (including S being out of range)
+    // See asserts above.
+    // > or if the group equation does not hold.
+    return rhs[0] == lhs[0] && rhs[1] == lhs[1];
+}

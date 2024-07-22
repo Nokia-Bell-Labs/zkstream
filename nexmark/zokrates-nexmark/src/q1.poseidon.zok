@@ -1,0 +1,37 @@
+from "./shared" import
+    PublicKey,
+    Signature,
+    MessageMetadata,
+    Bids,
+    verifySignaturePoseidonEddsa as verifySignature;
+
+// Number of messages.
+const u32 N_MESSAGES = 100;
+
+// Conversion rate.
+// const u64 CONVERSION_RATE_USD_TO_EUR = 0.898900645;
+const u64 CONVERSION_RATE_USD_TO_EUR = 898900645; // / 10^9
+
+def main(
+    // Public key of sensor
+    PublicKey publicKey,
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private Bids<N_MESSAGES> bids,
+    // Signatures of messages
+    private Signature[N_MESSAGES] signatures
+// output (public)
+) -> u64[N_MESSAGES] {
+    // 1. Verify all signatures
+    for u32 i in 0..N_MESSAGES {
+        bool isZero = i >= bids.n;
+        assert(verifySignature(publicKey, msgs[i], bids.values[i], signatures[i], isZero));
+    }
+    // 2. Calculate output
+    u64[N_MESSAGES] mut outputs = [0; N_MESSAGES];
+    for u32 i in 0..N_MESSAGES {
+        outputs[i] = (bids.values[i].price * CONVERSION_RATE_USD_TO_EUR) / 1000000000;
+    }
+    return outputs;
+}

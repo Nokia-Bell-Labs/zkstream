@@ -1,0 +1,226 @@
+import "./verifyEddsa" as verifyEddsa;
+from "utils/casts" import cast;
+import "utils/casts/bool_256_to_u32_8" as bool_256_to_u32_8;
+import "utils/casts/u32_8_to_bool_256" as u32_8_to_bool_256;
+import "utils/casts/u64_to_field" as u64_to_field;
+import "utils/pack/bool/pack" as pack;
+import "utils/pack/bool/unpack" as unpack;
+import "utils/pack/u32/nonStrictUnpack256" as unpack256u;
+import "hashes/sha256/sha256Padded" as sha256;
+import "hashes/sha256/1024bitPadded" as sha256_1024;
+import "hashes/poseidon/poseidon" as poseidon;
+
+// 2^32
+const field TWO_32 = 4294967296;
+
+// SHA256 hash
+type HashSHA256 = u32[8];
+// Poseidon hash
+type HashPoseidon = field;
+
+// Salt for SHA256 (512 bit)
+type SaltSHA256 = u8[64];
+// Salt for Poseidon (4 fields)
+type SaltPoseidon = field[4];
+
+// Public key, using Ed-BabyJubJub
+struct PublicKey {
+    // Curve point.
+    field x;
+    field y;
+}
+
+// Signature, using Ed-BabyJubJub
+struct Signature {
+    // R: Curve point. Hidden version of the per-message nonce.
+    field Rx;
+    field Ry;
+    // S: Field element. Signature to be verified.
+    field S;
+}
+
+// A message's metadata (public).
+struct MessageMetadata {
+    u64 deviceId;
+    u64 messageId;
+    u64 timestamp; // UNIX timestamp
+}
+
+// A bid.
+struct Bid {
+    u64 auction;
+    u64 price;  
+}
+
+// Variable-sized array of Bids.
+//
+// N is the maximum size.
+struct Bids<N> {
+    Bid[N] values;
+    u32 n;
+}
+
+// Variable-sized array of u64s.
+//
+// N is the maximum size.
+struct U64s<N> {
+    u64[N] values;
+    u32 n;
+}
+
+// A public key corresponding to a private key of 0.
+const PublicKey ZERO_PUBLIC_KEY = PublicKey {
+    x: 16508917144752610602145963506823743115557101240265470506805505298395529637033,
+    y: 18631654747796370155722974221085383534170330422926471002342567715267253236113,
+};
+
+// A valid signature for a zero message (no hashing!) and a zero private key.
+// TODO is this correct?
+const Signature ZERO_SIGNATURE = Signature {
+    Rx: 19305443290508114514596883319505632209723717456873021433762886134731615157949,
+    Ry: 7697908474521279722044072655602572024791636126724064066592600415024484698566,
+    S: 983289417060294735236888011028457617482700900137563028470545220005821415621,
+};
+
+// Convert big-endian to little-endian.
+def be_to_le(u8[8] bytes) -> u8[8] {
+    return [
+        bytes[7],
+        bytes[6],
+        bytes[5],
+        bytes[4],
+        bytes[3],
+        bytes[2],
+        bytes[1],
+        bytes[0]
+    ];
+}
+
+// Hash a message using SHA256, with salt.
+def hashMessageSHA256(MessageMetadata msg, Bid value, SaltSHA256 salt) -> HashSHA256 {
+    u8[8] timestampBytes = cast([msg.timestamp]); // u64[1] to u8[8]
+    u8[8] value1Bytes = cast([value.auction]); // u64[1] to u8[8]
+    u8[8] value2Bytes = cast([value.price]); // u64[1] to u8[8]
+    u8[64] saltBytes = salt;
+    u8[88] bytes = [
+        ...timestampBytes, // 8 bytes - BE
+        ...value1Bytes,    // 8 bytes - BE
+        ...value2Bytes,    // 8 bytes - BE
+        ...saltBytes       // 64 bytes
+    ];
+    u32[8] hash = sha256(bytes);
+    // log("msg id = {}", msg.messageId);
+    // log("hash({}) = {}", bytes, hash);
+    return hash;
+}
+
+// Hash a message using SHA256, without salt.
+def hashMessageSHA256NoSalt(MessageMetadata msg, Bid value) -> HashSHA256 {
+    u8[8] timestampBytes = cast([msg.timestamp]); // u64[1] to u8[8]
+    u8[8] value1Bytes = cast([value.auction]); // u64[1] to u8[8]
+    u8[8] value2Bytes = cast([value.price]); // u64[1] to u8[8]
+    u8[24] bytes = [
+        ...timestampBytes, // 8 bytes - BE
+        ...value1Bytes,    // 8 bytes - BE
+        ...value2Bytes     // 8 bytes - BE
+    ];
+    u32[8] hash = sha256(bytes);
+    // log("msg id = {}", msg.messageId);
+    // log("hash({}) = {}", bytes, hash);
+    return hash;
+}
+
+// Hash a message using Poseidon, with salt.
+def hashMessagePoseidon(MessageMetadata msg, Bid value, SaltPoseidon salt) -> HashPoseidon {
+    field timestamp_field = u64_to_field(msg.timestamp);
+    field auction_field = u64_to_field(value.auction);
+    field price_field = u64_to_field(value.price);
+    assert(auction_field < TWO_32, "Auction field is too large");
+    assert(price_field < TWO_32, "Price field is too large");
+    field value_field = auction_field * TWO_32 + price_field;
+    field[6] inputs = [
+        timestamp_field,
+        value_field,
+        salt[0],
+        salt[1],
+        salt[2],
+        salt[3]
+    ];
+    field hash = poseidon(inputs);
+    // log("msg id = {}", msg.messageId); // 0x2dd259 = 3002969
+    // log("hash({}) = (field) {}", inputs, hash);
+    return hash;
+}
+
+// Hash a message using Poseidon, without salt.
+def hashMessagePoseidonNoSalt(MessageMetadata msg, Bid value) -> HashPoseidon {
+    field timestamp_field = u64_to_field(msg.timestamp);
+    field auction_field = u64_to_field(value.auction);
+    field price_field = u64_to_field(value.price);
+    assert(auction_field < TWO_32, "Auction field is too large");
+    assert(price_field < TWO_32, "Price field is too large");
+    field value_field = auction_field * TWO_32 + price_field;
+    field[2] inputs = [
+        timestamp_field,
+        value_field
+    ];
+    field hash = poseidon(inputs);
+    // log("msg id = {}", msg.messageId); // 0x2dd259 = 3002969
+    // log("hash({}) = (field) {}", inputs, hash);
+    return hash;
+}
+
+// Verify a signature using the Poseidon hash.
+def verifySignaturePoseidonEddsa(PublicKey publicKey, MessageMetadata msg, Bid value,
+    Signature signature, bool isZero) -> bool {
+    // For zero messages, we use a precomputed signature.
+    PublicKey pk = isZero ? ZERO_PUBLIC_KEY : publicKey;
+    Signature sig = isZero ? ZERO_SIGNATURE : signature;
+    // 1. Calculate hash
+    field hash = isZero ? 0 : hashMessagePoseidonNoSalt(msg, value);
+    // 2. Check signature of message
+    field hRAM = poseidon([sig.Rx, sig.Ry, pk.x, pk.y, hash]);
+    // log("hRAM = poseidon({}, {}, {}, {}, {}) = {}",
+    //     sig.Rx, sig.Ry, pk.x, pk.y, msg,
+    //     hRAM);
+    bool[256] hRAMBits = unpack(hRAM);
+    bool isVerified = verifyEddsa([sig.Rx, sig.Ry], sig.S, [pk.x, pk.y], hRAMBits);
+    return isZero ? true : isVerified;
+}
+
+// Verify a signature using the SHA256 hash.
+def verifySignatureSHA256Eddsa(PublicKey publicKey, MessageMetadata msg, Bid value,
+    Signature signature, bool isZero) -> bool {
+    // For zero messages, we use a precomputed signature.
+    PublicKey pk = isZero ? ZERO_PUBLIC_KEY : publicKey;
+    Signature sig = isZero ? ZERO_SIGNATURE : signature;
+    // 1. Calculate hash
+    u32[8] hash = isZero ? [0; 8] : hashMessageSHA256NoSalt(msg, value);
+    // 2. Check signature of message
+    u32[8] firstHalf = [0; 8];
+    u32[8] Rx = unpack256u(sig.Rx);
+    u32[8] Ax = unpack256u(pk.x);
+    bool[256] hRAM = u32_8_to_bool_256(sha256_1024(Rx, Ax, firstHalf, hash));
+    // Built-in Zokrates implementation uses only R.x and A.x, instead of
+    // all of R and A. Is that actually secure?
+    bool isVerified = verifyEddsa([sig.Rx, sig.Ry], sig.S, [pk.x, pk.y], hRAM);
+    return isZero ? true : isVerified;
+}
+
+// Hash an output using SHA256, with salt.
+def hashOutputSHA256(u64 value, SaltSHA256 salt) -> HashSHA256 {
+    u8[8] valueBytes = cast([value]); // u64[1] to u8[8]
+    return sha256([
+        ...valueBytes, // 8 bytes - BE
+        ...salt        // 64 bytes
+    ]);
+}
+
+// Hash an output using Poseidon, with salt.
+def hashOutputPoseidon(u64 value, SaltPoseidon salt) -> HashPoseidon {
+    field valueField = u64_to_field(value);
+    return poseidon([
+        valueField,
+        ...salt
+    ]);
+}

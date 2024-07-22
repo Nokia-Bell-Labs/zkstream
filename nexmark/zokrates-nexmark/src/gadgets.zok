@@ -1,0 +1,101 @@
+from "utils/casts" import cast;
+from "./shared" import
+    Bids,
+    Bid,
+    U64s;
+
+// Assert that values are sorted.
+def assert_sorted<N>(U64s<N> a) -> bool {
+    for u32 i in 1..N {
+        assert(i < a.n ? a.values[i - 1] <= a.values[i] : true);
+    }
+    return true;
+}
+
+// Assert that values are sorted by price.
+def assert_sorted_by_price<N>(Bids<N> a) -> bool {
+    for u32 i in 1..N {
+        assert(i < a.n ? a.values[i - 1].price <= a.values[i].price : true);
+    }
+    return true;
+}
+
+// Assert that values are sorted by auction.
+def assert_sorted_by_auction<N>(Bids<N> a) -> bool {
+    for u32 i in 1..N {
+        assert(i < a.n ? a.values[i - 1].auction <= a.values[i].auction : true);
+    }
+    return true;
+}
+
+// Count values. This is simply the length of the array.
+def count<N>(Bids<N> a) -> u32 {
+    return a.n;
+}
+
+// Count distinct values for auction.
+def count_distinct<N>(Bids<N> a) -> u32 {
+    assert(assert_sorted_by_auction::<N>(a));
+    u32 mut count = 1;
+    for u32 i in 1..N {
+        bool distinct = i < a.n && a.values[i - 1].auction != a.values[i].auction;
+        count = count + if (distinct) { 1 } else { 0 };
+    }
+    return count;
+}
+
+// Get distinct values for auction.
+def distinct<N>(Bids<N> a) -> U64s<N> {
+    assert(assert_sorted_by_auction::<N>(a));
+    u64[N] mut distincts = [0; N];
+    distincts[0] = a.values[0].auction;
+    u32 mut j = 1;
+    for u32 i in 1..N {
+        bool distinct = i < a.n && a.values[i - 1].auction != a.values[i].auction;
+        distincts[j] = if (distinct) { a.values[i].auction } else { distincts[j] };
+        j = if (distinct) { j + 1 } else { j };
+    }
+    log("distinct: {}", distincts);
+    return U64s { values: distincts, n: j };
+}
+
+// Calculate the sum.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def sum<N>(U64s<N> a) -> u64 {
+    u64 mut sum = 0;
+    for u32 i in 0..N {
+        sum = sum + if (i < a.n) { a.values[i] } else { 0 };
+    }
+    return sum;
+}
+
+// Return the maximum based on price.
+// Values must be pre-sorted.
+def max<N>(Bids<N> a) -> Bid {
+    assert(assert_sorted_by_price::<N>(a));
+    return a.values[a.n - 1];
+}
+
+// Return the maximum.
+// Values must be pre-sorted.
+def max<N>(U64s<N> a) -> u64 {
+    assert(assert_sorted::<N>(a));
+    return a.values[a.n - 1];
+}
+
+// Return the minimum based on price.
+// Values must be pre-sorted.
+def min<N>(Bids<N> a) -> Bid {
+    assert(assert_sorted_by_price::<N>(a));
+    return a.values[0];
+}
+
+// Calculate the average.
+// Note: + can overflow! We assume numbers are small enough that this does not happen.
+def average<N>(U64s<N> a) -> u64 {
+    u64 sum = sum(a);
+    u64 n = cast(a.n);
+    u64 avg = sum / n;  // floor division
+    log("sum = {}, n = {}, avg = {}", sum, n, avg);
+    return avg;
+}

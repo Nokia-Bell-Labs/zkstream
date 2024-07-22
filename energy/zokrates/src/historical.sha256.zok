@@ -1,0 +1,40 @@
+from "./shared" import
+    PublicKey,
+    Signature,
+    MessageMetadata,
+    MessageValue,
+    averageLoad,
+    HashSHA256 as Hash,
+    SaltSHA256 as Salt,
+    verifySignatureSHA256Eddsa as verifySignature,
+    hashOutputSHA256 as hashOutput;
+
+// Maximum number of messages in slice.
+// Slice can be padded with zero values.
+const u32 N_MESSAGES = 180;
+
+def main(
+    // Public key of sensor
+    PublicKey publicKey,
+    // Actual number of (non-zero) messages
+    u32 nMessages,
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Values of messages
+    private MessageValue[N_MESSAGES] vals,
+    // Signatures of messages
+    private Signature[N_MESSAGES] signatures,
+    // Salt to be used for output
+    private Salt outputSalt
+// value (private), hashed value (public)
+) -> (u64, Hash) {
+    // 1. Verify signatures
+    for u32 i in 0..N_MESSAGES {
+        assert(i < nMessages ? verifySignature(publicKey, msgs[i], vals[i], signatures[i], i >= nMessages) : true);
+    }
+    // 2. Calculate average load
+    u64 avg = averageLoad::<N_MESSAGES>(vals, nMessages);
+    // 3. Hash output
+    Hash avg_hashed = hashOutput(avg, outputSalt);
+    return (avg, avg_hashed);
+}

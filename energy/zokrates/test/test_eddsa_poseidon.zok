@@ -1,0 +1,55 @@
+from "../src/shared" import PublicKey, MessageMetadata, MessageValue, SaltPoseidon, Signature, verifySignaturePoseidonEddsa;
+
+def verifyMessage(MessageValue val) -> bool {
+    // Note: don't use this for performance measurements, as lots of compile-time
+    // optimizations happen when these values are provided as constants.
+    PublicKey publicKey = PublicKey {
+        x: 1891156797631087029347893674931101305929404954783323547727418062433377377293,
+        y: 14780632341277755899330141855966417738975199657954509255716508264496764475094,
+    };
+
+    MessageMetadata msg = MessageMetadata {
+        deviceId: 0,
+        messageId: 7,
+        timestamp: 1577836800
+    };
+    // MessageValue val = 123;
+    // Hash will be 9680575115483137054619374951052552265437214847559015354341148812072812999628.
+    Signature signature = Signature {
+        Rx: 2552720695020887001329174990843062548795192210336039033576484908222566586441,
+        Ry: 8577490760109565407915233892753756016567698545842783288469396887258244402949,
+        S: 2542684221057280233605538485080584714408685800914917355687464666426774284819,
+    };
+
+    bool verified = verifySignaturePoseidonEddsa(publicKey, msg, val, signature, false);
+    return verified;
+}
+
+def verifyZeroMessage(MessageValue val) -> bool {
+    // This is a public key corresponding to a private key of 0.
+    PublicKey publicKey = PublicKey {
+        x: 16508917144752610602145963506823743115557101240265470506805505298395529637033,
+        y: 18631654747796370155722974221085383534170330422926471002342567715267253236113,
+    };
+
+    MessageMetadata msg = MessageMetadata {
+        deviceId: 0,
+        messageId: 0,
+        timestamp: 0
+    };
+    // MessageValue val = 0;
+    // This is a valid signature for a zero message and a zero private key.
+    Signature signature = Signature {
+        Rx: 19305443290508114514596883319505632209723717456873021433762886134731615157949,
+        Ry: 7697908474521279722044072655602572024791636126724064066592600415024484698566,
+        S: 983289417060294735236888011028457617482700900137563028470545220005821415621,
+    };
+
+    bool verified = verifySignaturePoseidonEddsa(publicKey, msg, val, signature, true);
+    return verified;
+}
+
+def main(MessageValue val) {
+    assert(verifyMessage(val));
+    assert(verifyZeroMessage(val));
+}

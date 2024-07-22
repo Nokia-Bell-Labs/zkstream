@@ -1,0 +1,59 @@
+from "./shared" import
+    MessageMetadata,
+    MessageValue,
+    averageLoad,
+    HashPoseidon as Hash,
+    SaltPoseidon as Salt,
+    hashMessagePoseidon as hashMessage,
+    hashOutputPoseidon as hashOutput,
+    HistoricalResultPoseidon as HistoricalResult,
+    medianPoseidon as median;
+
+// Maximum number of messages in slice.
+// Slice can be padded with zero values.
+const u32 N_MESSAGES = 180;
+
+// Maximum number of "historical" slices.
+// Can be padded with zero values.
+const u32 N_HISTORICAL = 30;
+
+def main(
+    // Actual number of (non-zero) historical results
+    u32 nHistorical,
+    // Hashes of historical results
+    Hash[N_HISTORICAL] historicalHashes,
+    // Actual number of (non-zero) messages
+    u32 nMessages,
+    // Metadata of messages
+    MessageMetadata[N_MESSAGES] msgs,
+    // Historical results
+    private HistoricalResult[N_HISTORICAL] historicalResults,
+    // Values of messages
+    private MessageValue[N_MESSAGES] vals,
+    // Salts of messages
+    private Salt[N_MESSAGES] salts
+// value (public), hashed messages (public)
+) -> (u64, Hash[N_MESSAGES]) {
+    // Note: `nHistorical <= N_HISTORICAL` does not compile, we need to add `? true : false`.
+    // See https://github.com/Zokrates/ZoKrates/issues/1295.
+    assert(nHistorical <= N_HISTORICAL ? true : false);
+    assert(nMessages <= N_MESSAGES ? true : false);
+    // 1. Calculate hashes
+    Hash[N_MESSAGES] mut hashes = [0; N_MESSAGES];
+    for u32 i in 0..N_MESSAGES {
+        hashes[i] = if (i < nMessages) { hashMessage(msgs[i], vals[i], salts[i]) } else { 0 };
+    }
+    // 2. Check hashes of historical results
+    for u32 i in 0..N_HISTORICAL {
+        Hash actual = hashOutput(historicalResults[i].average, historicalResults[i].salt);
+        Hash expected = historicalHashes[i];
+        assert(i < nHistorical ? actual == expected : true);
+    }
+    // 3. Check if historical results are sorted correctly, and take median.
+    u64 historicalMedian = median(historicalResults, nHistorical);
+    // 4. Calculate average load of current slice
+    u64 current = averageLoad::<N_MESSAGES>(vals, nMessages);
+    // 5. Calculate final result
+    u64 result = (current + historicalMedian) / 2;
+    return (result, hashes);
+}

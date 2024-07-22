@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+members = [
+    "lib/datajson",
+    "lib/hash_sign",
+    "sensors-rs",
+    "zokrates",
+    "zokrates-flexibility",
+]
+
+# Always optimize.
+# To generate Poseidon hashes this is much faster.
+[profile.dev]
+opt-level = 3
+
+[profile.dev.build-override]
+opt-level = 3
+
+[profile.release]
+debug = 1
+lto = true
+
+[profile.release.build-override]
+opt-level = 3
