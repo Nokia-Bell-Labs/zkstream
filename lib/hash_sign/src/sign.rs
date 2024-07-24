@@ -1,3 +1,7 @@
+// Copyright 2024 Nokia
+// Licensed under the BSD 3-Clause Clear License.
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 use crate::utils::{field_to_bigint, field_to_bytes};
 use crate::SerializableMessage;
 use aggsigs::schemes::bls;

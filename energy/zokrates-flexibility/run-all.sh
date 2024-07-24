@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright 2024 Nokia
+# Licensed under the BSD 3-Clause Clear License.
+# SPDX-License-Identifier: BSD-3-Clause-Clear
+
 # This script runs the benchmark for different variants.
 # For each variant, it runs the compilation only once and then runs the actual
 # execution and verification 30 times.

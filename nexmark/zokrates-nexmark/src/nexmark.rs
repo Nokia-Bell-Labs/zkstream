@@ -1,3 +1,7 @@
+// Copyright 2024 Nokia
+// Licensed under the BSD 3-Clause Clear License.
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 //! This module contains the code to execute the Nexmark queries, including passing the
 //! outputs of one ZoKrates program as inputs to another.
 

@@ -1,4 +1,4 @@
-# sensors-rs
+# NEXMark sensors
 
 This project generates simulated sensor data.
 

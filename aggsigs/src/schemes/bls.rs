@@ -1,3 +1,7 @@
+// Copyright 2024 Nokia
+// Licensed under the BSD 3-Clause Clear License.
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 use blst::min_pk::{AggregateSignature, PublicKey, SecretKey, Signature};
 use blst::{blst_p1, blst_p1_affine, blst_p2, blst_p2_affine, blst_scalar, BLST_ERROR};
 use rand_chacha::ChaCha20Rng;

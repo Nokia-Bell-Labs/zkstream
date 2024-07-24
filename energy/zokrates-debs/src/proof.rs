@@ -1,3 +1,7 @@
+// Copyright 2024 Nokia
+// Licensed under the BSD 3-Clause Clear License.
+// SPDX-License-Identifier: BSD-3-Clause-Clear
+
 //! This module contains code to parse ZoKrates outputs.
 
 use debs_datajson::{Fr, PublicKeyEdDSA};

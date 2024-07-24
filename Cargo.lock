@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "aggsigs"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "blake3",
  "blst",
@@ -336,7 +336,7 @@ dependencies = [
 
 [[package]]
 name = "debs-datajson"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "blst",
@@ -352,7 +352,7 @@ dependencies = [
 
 [[package]]
 name = "debs-sensors"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "blst",
@@ -528,7 +528,7 @@ dependencies = [
 
 [[package]]
 name = "hash-sign"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "aggsigs",
  "babyjubjub-rs",
@@ -666,7 +666,7 @@ checksum = "78ca9ab1a0babb1e7d5695e3530886289c18cf2f87ec19a575a0abdce112e3a3"
 
 [[package]]
 name = "nexmark-datajson"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "blst",
@@ -681,7 +681,7 @@ dependencies = [
 
 [[package]]
 name = "nexmark-sensors"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "blst",
@@ -1316,7 +1316,7 @@ dependencies = [
 
 [[package]]
 name = "zokrates-debs"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "chrono",
@@ -1333,7 +1333,7 @@ dependencies = [
 
 [[package]]
 name = "zokrates-flexibility"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "chrono",
@@ -1350,7 +1350,7 @@ dependencies = [
 
 [[package]]
 name = "zokrates-nexmark"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "babyjubjub-rs",
  "chrono",
