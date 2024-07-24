@@ -7,11 +7,10 @@ use crate::params::{program_name, Bls, Params, SigVariant};
 use crate::verification;
 use crate::zokrates::{aggregate_bls_signatures, compile, compute_witness, generate_proof, setup};
 use crate::Options;
-use datajson::Auction;
-use datajson::{DataJson, SignedMessageJson};
 use hash_sign::sign::BLSAggregateSignature;
 use itertools::multiunzip;
 use itertools::Itertools;
+use nexmark_datajson::{Auction, DataJson, SignedMessageJson};
 use serde_json;
 use std::collections::{BTreeMap, HashMap};
 

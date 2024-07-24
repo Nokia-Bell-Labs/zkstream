@@ -1,7 +1,0 @@
-.DS_Store
-.venv/
-target/
-log
-*.log
-*.csv
-*.xlsx

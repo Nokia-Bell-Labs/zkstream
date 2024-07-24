@@ -1,0 +1,28 @@
+[workspace]
+resolver = "2"
+members = [
+    "aggsigs",
+    "lib/hash_sign",
+    "energy/debs-datajson",
+    "energy/debs-sensors",
+    "energy/zokrates-debs",
+    "energy/zokrates-flexibility",
+    "nexmark/nexmark-datajson",
+    "nexmark/nexmark-sensors",
+    "nexmark/zokrates-nexmark",
+]
+
+# Always optimize.
+# To generate Poseidon hashes this is much faster.
+[profile.dev]
+opt-level = 3
+
+[profile.dev.build-override]
+opt-level = 3
+
+[profile.release]
+debug = 1
+lto = true
+
+[profile.release.build-override]
+opt-level = 3

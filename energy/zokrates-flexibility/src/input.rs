@@ -1,7 +1,7 @@
 //! This module contains code to generate the inputs for the ZoKrates programs.
 
-use datajson::utils::{bigint_to_decimal_str, field_to_decimal_str};
-use datajson::{BLSSignature, Data, SignedMessage};
+use debs_datajson::{BLSSignature, Data, SignedMessage};
+use hash_sign::utils::{bigint_to_decimal_str, field_to_decimal_str};
 use rand::rngs::StdRng;
 use rand::{Rng, SeedableRng};
 use serde;

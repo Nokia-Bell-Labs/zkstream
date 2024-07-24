@@ -1,9 +1,9 @@
-use std::collections::HashMap;
-use blst::{BLST_ERROR, blst_p1, blst_p1_affine, blst_p2, blst_p2_affine, blst_scalar};
 use blst::min_pk::{AggregateSignature, PublicKey, SecretKey, Signature};
-use rand_chacha::{ChaCha20Rng};
+use blst::{blst_p1, blst_p1_affine, blst_p2, blst_p2_affine, blst_scalar, BLST_ERROR};
+use rand_chacha::ChaCha20Rng;
 use rand_core::RngCore;
 use rand_core::SeedableRng;
+use std::collections::HashMap;
 
 /// This is a BLST wrapper to offer a protection against rogue
 /// public key attacks. This protections is based on this paper:
@@ -36,13 +36,9 @@ impl KeyPair {
     pub fn decode(&self, sk: &[u8], pk: &[u8]) -> KeyPair {
         let sk = sk_from_bytes(sk).unwrap();
         let pk = pk_from_bytes(pk).unwrap();
-        KeyPair {
-            sk,
-            pk,
-        }
+        KeyPair { sk, pk }
     }
 }
-
 
 pub fn get_data(data_bytes: &mut [u8]) {
     let mut rng = ChaCha20Rng::from_entropy();
@@ -58,10 +54,7 @@ pub fn gen_key_pair() -> KeyPair {
     let sk = SecretKey::key_gen(&ikm, &[]).unwrap();
     let pk = sk.sk_to_pk();
 
-    KeyPair {
-        sk,
-        pk,
-    }
+    KeyPair { sk, pk }
 }
 
 fn hash_pk(pk: &PublicKey) -> Option<blst_scalar> {
@@ -101,7 +94,8 @@ fn blst_p2_to_sig(sig_blst_p2: &blst_p2) -> Signature {
         let mut sig_affine_bytes: [u8; 96] = [0u8; 96];
         blst::blst_p2_affine_compress(sig_affine_bytes.as_mut_ptr(), &sig_blst_p2_affine);
 
-        Signature::from_bytes(sig_affine_bytes.as_slice()).expect("blst_p2_to_sig() failed to reconstruct the sig from affine bytes")
+        Signature::from_bytes(sig_affine_bytes.as_slice())
+            .expect("blst_p2_to_sig() failed to reconstruct the sig from affine bytes")
     }
 }
 
@@ -127,7 +121,8 @@ fn blst_p1_to_pk(pk_blst_p1: &blst_p1) -> PublicKey {
         let mut pk_affine_bytes: [u8; 48] = [0u8; 48];
         blst::blst_p1_affine_compress(pk_affine_bytes.as_mut_ptr(), &pk_blst_p1_affine);
 
-        PublicKey::from_bytes(pk_affine_bytes.as_slice()).expect("blst_p1_to_pk() failed to reconstruct the PK from affine bytes")
+        PublicKey::from_bytes(pk_affine_bytes.as_slice())
+            .expect("blst_p1_to_pk() failed to reconstruct the PK from affine bytes")
     }
 }
 
@@ -147,7 +142,12 @@ pub fn sign(sk: &SecretKey, pk: &PublicKey, data: &[u8]) -> Sig {
     let sig_blst_p2 = sig_to_blst_p2(&sig);
     unsafe {
         let mut sig_t_blst_p2 = blst_p2::default();
-        blst::blst_p2_mult(&mut sig_t_blst_p2, &sig_blst_p2, t_blst_scalar.b.as_ptr(), t_blst_scalar.b.len());
+        blst::blst_p2_mult(
+            &mut sig_t_blst_p2,
+            &sig_blst_p2,
+            t_blst_scalar.b.as_ptr(),
+            t_blst_scalar.b.len(),
+        );
 
         blst_p2_to_sig(&sig_t_blst_p2)
     }
@@ -162,7 +162,12 @@ pub fn verify(pk: &Pk, data: &[u8], sig: &Sig) -> VerResult {
     let pk_blst_p1 = pk_to_blst_p1(&pk);
     let mut pk_t_blst_p1 = blst_p1::default();
     unsafe {
-        blst::blst_p1_mult(&mut pk_t_blst_p1, &pk_blst_p1, t_blst_scalar.b.as_ptr(), t_blst_scalar.b.len());
+        blst::blst_p1_mult(
+            &mut pk_t_blst_p1,
+            &pk_blst_p1,
+            t_blst_scalar.b.as_ptr(),
+            t_blst_scalar.b.len(),
+        );
     }
     let pk_t = blst_p1_to_pk(&pk_t_blst_p1);
 
@@ -185,11 +190,15 @@ fn compute_pk_t(pk: &PublicKey) -> blst_p1 {
 
     let mut pk_t_blst_p1 = blst_p1::default();
     unsafe {
-        blst::blst_p1_mult(&mut pk_t_blst_p1, &pk_blst_p1, t_blst_scalar.b.as_ptr(), t_blst_scalar.b.len());
+        blst::blst_p1_mult(
+            &mut pk_t_blst_p1,
+            &pk_blst_p1,
+            t_blst_scalar.b.as_ptr(),
+            t_blst_scalar.b.len(),
+        );
         pk_t_blst_p1
     }
 }
-
 
 fn aggregate_2_pks(pk1: &blst_p1, pk2: &blst_p1) -> blst_p1 {
     unsafe {
@@ -199,7 +208,7 @@ fn aggregate_2_pks(pk1: &blst_p1, pk2: &blst_p1) -> blst_p1 {
     }
 }
 
-pub fn aggregate_public_keys(public_keys: &[(&Pk,u64)]) -> Pk {
+pub fn aggregate_public_keys(public_keys: &[(&Pk, u64)]) -> Pk {
     let mut aggs = vec![];
     for pk_pair in public_keys {
         let pk = (*pk_pair).0;
@@ -282,7 +291,11 @@ pub fn verify_agg_one_message_apk(agg_sig: AggSig, message: &[u8], agg_pk: Pk) -
 ///     (t) <- H1(pk)
 ///     pk_t <- pk^t
 /// e(g1,σ) == e(pk₁^t₁,H_0(m))....e(pkₙ^tₙ,H_0(m))
-pub fn verify_agg_multiple_messages(agg_sig: AggSig, messages: &[&[u8]], public_keys: &[&Pk]) -> VerResult {
+pub fn verify_agg_multiple_messages(
+    agg_sig: AggSig,
+    messages: &[&[u8]],
+    public_keys: &[&Pk],
+) -> VerResult {
     // [pk_i^t_i]
     let mut pks_t = vec![];
     for pk in public_keys {
@@ -295,7 +308,6 @@ pub fn verify_agg_multiple_messages(agg_sig: AggSig, messages: &[&[u8]], public_
     verify_agg_multiple_messages_apk(agg_sig, messages, &pks_t_refs)
 }
 
-
 /// Each signature on a different message
 /// with various (sk,pk) key pairs. Each
 /// public key is an aggregate of pks.
@@ -305,7 +317,11 @@ pub fn verify_agg_multiple_messages(agg_sig: AggSig, messages: &[&[u8]], public_
 ///     (t) <- H1(pk)
 ///     pk_t <- pk^t
 /// e(g1,σ) == e(pk₁^t₁,H_0(m))....e(pkₙ^tₙ,H_0(m))
-pub fn verify_agg_multiple_messages_apk(agg_sig: AggSig, messages: &[&[u8]], agg_pk: &[&Pk]) -> VerResult {
+pub fn verify_agg_multiple_messages_apk(
+    agg_sig: AggSig,
+    messages: &[&[u8]],
+    agg_pk: &[&Pk],
+) -> VerResult {
     let sig = agg_sig.to_signature();
     sig.aggregate_verify(true, messages, DST, agg_pk, false)
 }
@@ -314,7 +330,11 @@ pub fn verify_agg_multiple_messages_apk(agg_sig: AggSig, messages: &[&[u8]], agg
 /// duplicating it as many times as the
 /// number of the messages.
 /// TODO: more security investigation
-pub fn verify_agg_multiple_messages_one_pk(agg_sig: AggSig, messages: &[&[u8]], pk: &Pk) -> VerResult {
+pub fn verify_agg_multiple_messages_one_pk(
+    agg_sig: AggSig,
+    messages: &[&[u8]],
+    pk: &Pk,
+) -> VerResult {
     // aggregate PKs (which are the same in this case)
     let apk_blst_p1 = aggregate_same_pks(pk, messages.len() as u64);
     let apk = blst_p1_to_pk(&apk_blst_p1);
@@ -345,7 +365,6 @@ pub fn pk_from_hex(hex: &str) -> Result<Pk, BLST_ERROR> {
 pub fn sk_from_bytes(bytes: &[u8]) -> Result<SecretKey, BLST_ERROR> {
     SecretKey::from_bytes(bytes)
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -535,13 +554,19 @@ mod tests {
         let pks_one_missing = vec![&kp1.pk, &kp2.pk, &kp3.pk];
         let result_one_missing = verify_agg_one_message(agg_sig, data, pks_one_missing.as_slice());
         assert_ne!(BLST_ERROR::BLST_SUCCESS, result_one_missing);
-        println!("verify_agg_one_message(one pk missing): {:?}", result_one_missing);
+        println!(
+            "verify_agg_one_message(one pk missing): {:?}",
+            result_one_missing
+        );
 
         // wrong verification
         let pks_one_extra = vec![&kp1.pk, &kp2.pk, &kp3.pk, &kp4.pk, &kp4.pk];
         let result_one_extra = verify_agg_one_message(agg_sig, data, pks_one_extra.as_slice());
         assert_ne!(BLST_ERROR::BLST_SUCCESS, result_one_extra);
-        println!("verify_agg_one_message(one pk extra): {:?}", result_one_extra);
+        println!(
+            "verify_agg_one_message(one pk extra): {:?}",
+            result_one_extra
+        );
     }
 
     #[test]
@@ -574,15 +599,23 @@ mod tests {
 
         // wrong verification
         let pks_one_missing = vec![&kp1.pk, &kp2.pk, &kp3.pk];
-        let result_one_missing = verify_agg_multiple_messages(agg_sig, &datas, pks_one_missing.as_slice());
+        let result_one_missing =
+            verify_agg_multiple_messages(agg_sig, &datas, pks_one_missing.as_slice());
         assert_ne!(BLST_ERROR::BLST_SUCCESS, result_one_missing);
-        println!("verify_agg_multiple_messages(one pk missing): {:?}", result_one_missing);
+        println!(
+            "verify_agg_multiple_messages(one pk missing): {:?}",
+            result_one_missing
+        );
 
         // wrong verification
         let pks_one_extra = vec![&kp1.pk, &kp2.pk, &kp3.pk, &kp4.pk, &kp4.pk];
-        let result_one_extra = verify_agg_multiple_messages(agg_sig, &datas, pks_one_extra.as_slice());
+        let result_one_extra =
+            verify_agg_multiple_messages(agg_sig, &datas, pks_one_extra.as_slice());
         assert_ne!(BLST_ERROR::BLST_SUCCESS, result_one_extra);
-        println!("verify_agg_multiple_messages(one pk extra): {:?}", result_one_extra);
+        println!(
+            "verify_agg_multiple_messages(one pk extra): {:?}",
+            result_one_extra
+        );
     }
 
     #[test]
@@ -610,7 +643,6 @@ mod tests {
         let s2_sigs_refs: Vec<&Sig> = s2_sigs.iter().map(|sig| sig).collect();
         let s2_sig_agg = aggregate(&s2_sigs_refs);
 
-
         // sensor 3 produces 66 messages
         let s3_messages = produce_messages(3u8, 66u16);
         let s3_sigs: Vec<Sig> = s3_messages
@@ -623,17 +655,17 @@ mod tests {
         // Correctness: verify each aggregate signature independently
 
         // sensor1
-        let s1_messages_refs:Vec<&[u8]> = s1_messages.iter().map(|m| m.as_slice()).collect();
+        let s1_messages_refs: Vec<&[u8]> = s1_messages.iter().map(|m| m.as_slice()).collect();
         let s1_result = verify_agg_multiple_messages_one_pk(s1_sig_agg, &s1_messages_refs, &kp1.pk);
         assert_ne!(BLST_ERROR::BLST_SUCCESS, s1_result);
 
         // sensor2
-        let s2_messages_refs:Vec<&[u8]> = s2_messages.iter().map(|m| m.as_slice()).collect();
+        let s2_messages_refs: Vec<&[u8]> = s2_messages.iter().map(|m| m.as_slice()).collect();
         let s2_result = verify_agg_multiple_messages_one_pk(s2_sig_agg, &s2_messages_refs, &kp2.pk);
         assert_ne!(BLST_ERROR::BLST_SUCCESS, s2_result);
 
         // sensor3
-        let s3_messages_refs:Vec<&[u8]> = s3_messages.iter().map(|m| m.as_slice()).collect();
+        let s3_messages_refs: Vec<&[u8]> = s3_messages.iter().map(|m| m.as_slice()).collect();
         let s3_result = verify_agg_multiple_messages_one_pk(s3_sig_agg, &s3_messages_refs, &kp3.pk);
         assert_ne!(BLST_ERROR::BLST_SUCCESS, s3_result);
 
@@ -641,7 +673,7 @@ mod tests {
         let aggs = vec![
             s1_sig_agg.to_signature(),
             s2_sig_agg.to_signature(),
-            s3_sig_agg.to_signature()
+            s3_sig_agg.to_signature(),
         ];
         let aggs_refs: Vec<&Signature> = aggs.iter().map(|s| s).collect();
         let agg_of_aggs = aggregate(&aggs_refs);
@@ -660,13 +692,13 @@ mod tests {
         all_messages.extend(s1_messages);
         all_messages.extend(s2_messages);
         all_messages.extend(s3_messages);
-        let all_messages_refs:Vec<&[u8]> = all_messages.iter().map(|m| m.as_slice()).collect();
+        let all_messages_refs: Vec<&[u8]> = all_messages.iter().map(|m| m.as_slice()).collect();
 
         // verify
-        let all_result = verify_agg_multiple_messages_apk(agg_of_aggs, &all_messages_refs, &vec![&apk]);
+        let all_result =
+            verify_agg_multiple_messages_apk(agg_of_aggs, &all_messages_refs, &vec![&apk]);
         assert_ne!(BLST_ERROR::BLST_SUCCESS, all_result);
     }
-
 
     fn produce_messages(sensor: u8, message_count: u16) -> Vec<Vec<u8>> {
         let mut messages = vec![];
@@ -677,4 +709,3 @@ mod tests {
         messages
     }
 }
-

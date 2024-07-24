@@ -1,8 +1,8 @@
 //! This module contains code to generate the inputs for the ZoKrates programs.
 
 use crate::abi::*;
-use datajson::utils::{bigint_to_decimal_str, field_to_decimal_str};
-use datajson::{
+use hash_sign::utils::{bigint_to_decimal_str, field_to_decimal_str};
+use nexmark_datajson::{
     bls_signature_from_json, eddsa_signature_from_json, public_key_eddsa_from_json, BLSSignature,
     DataJson, SignedMessageJson,
 };

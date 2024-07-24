@@ -8,7 +8,7 @@ mod zokrates;
 
 use crate::params::Params;
 use clap::Parser;
-use datajson::DataJson;
+use nexmark_datajson::DataJson;
 use serde_json;
 use std::fs;
 use std::path::PathBuf;
