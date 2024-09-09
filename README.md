@@ -2,7 +2,7 @@
 
 This repository contains the code that is published as part of the artifact evaluation for the paper titled "zkStream: a Framework for Trustworthy Stream Processing".
 
-The paper appears at (TODO).
+The paper appears at the [25th ACM/IFIP International Middleware Conference (Middleware 2024)](https://middleware-conf.github.io/2024/) on December 2-6, 2024.
 
 ## Repository structure
 
