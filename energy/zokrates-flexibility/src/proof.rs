@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 //! This module contains code to parse ZoKrates outputs.
+#![allow(dead_code)]
+#![allow(non_snake_case)]
 
 use debs_datajson::{Fr, PublicKeyEdDSA};
 use hash_sign::utils::bytes_to_field;
@@ -25,7 +27,6 @@ pub const PUBLIC_KEY_SIZE: usize = 2; // 2 points in the field
 pub const MESSAGE_METADATA_SIZE: usize = 3;
 pub const HASH_POSEIDON_SIZE: usize = 1;
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct FlexibilityPoseidonPublicData {
     pub publicKey: PublicKey,
@@ -39,7 +40,6 @@ pub fn flexibility_poseidon_size(n_before: usize, n_after: usize) -> usize {
     PUBLIC_KEY_SIZE + MESSAGE_METADATA_SIZE * n_before + MESSAGE_METADATA_SIZE * n_after + 1 + 1
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct FlexibilityPoseidonNoSigPublicData {
     pub msgsBefore: Vec<MessageMetadata>, // size N_BEFORE

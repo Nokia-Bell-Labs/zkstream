@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 //! This module contains code to parse ZoKrates outputs.
+#![allow(dead_code)]
+#![allow(non_snake_case)]
 
 use debs_datajson::{Fr, PublicKeyEdDSA};
 use hash_sign::utils::bytes_to_field;
@@ -33,7 +35,6 @@ pub const MESSAGE_METADATA_SIZE: usize = 3;
 pub const HASH_POSEIDON_SIZE: usize = 1;
 pub const HASH_SHA256_SIZE: usize = 8;
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct HistoricalPoseidonPublicData {
     pub publicKey: PublicKey,
@@ -47,7 +48,6 @@ pub fn historical_poseidon_size(n_messages: usize) -> usize {
     PUBLIC_KEY_SIZE + 1 + MESSAGE_METADATA_SIZE * n_messages + 1 + HASH_POSEIDON_SIZE
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct HistoricalPoseidonNoSigPublicData {
     pub nMessages: u32,
@@ -64,7 +64,6 @@ pub fn historical_poseidon_no_sig_size(n_messages: usize) -> usize {
         + HASH_POSEIDON_SIZE * n_messages
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct HistoricalSha256PublicData {
     pub publicKey: PublicKey,
@@ -78,7 +77,6 @@ pub fn historical_sha256_size(n_messages: usize) -> usize {
     PUBLIC_KEY_SIZE + 1 + MESSAGE_METADATA_SIZE * n_messages + 1 + HASH_SHA256_SIZE
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct HistoricalSha256NoSigPublicData {
     pub nMessages: u32,
@@ -99,7 +97,6 @@ pub enum HistoricalPublicData {
     Sha256NoSig(HistoricalSha256NoSigPublicData),
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct Challenge1PoseidonPublicData {
     pub publicKey: PublicKey,
@@ -119,7 +116,6 @@ pub fn challenge1_poseidon_size(n_historical: usize, n_messages: usize) -> usize
         + 1
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct Challenge1PoseidonNoSigPublicData {
     pub nHistorical: u32,
@@ -138,7 +134,6 @@ pub fn challenge1_poseidon_no_sig_size(n_historical: usize, n_messages: usize) -
         + HASH_POSEIDON_SIZE * n_messages
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct Challenge1Sha256PublicData {
     pub publicKey: PublicKey,
@@ -158,7 +153,6 @@ pub fn challenge1_sha256_size(n_messages: usize, n_historical: usize) -> usize {
         + 1
 }
 
-#[allow(non_snake_case)]
 #[derive(Clone, Debug)]
 pub struct Challenge1Sha256NoSigPublicData {
     pub nHistorical: u32,

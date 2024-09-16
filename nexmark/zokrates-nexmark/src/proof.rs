@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: BSD-3-Clause-Clear
 
 //! This module contains code to parse ZoKrates outputs.
-
+#![allow(dead_code)]
 #![allow(non_snake_case)]
 
 use hash_sign::utils::bytes_to_field;
