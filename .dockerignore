@@ -1,0 +1,96 @@
+# MacOS
+.DS_Store
+
+# Rust
+target/
+
+# Python
+.venv/
+*.pyc
+
+# Zokrates
+universal_setup.dat
+**/*.tmp.zok
+**/out
+**/*.out
+**/abi.json
+**/*.abi.json
+**/*.r1cs
+**/*.ztf
+**/proving.key
+**/*.proving.key
+**/verification.key
+**/*.verification.key
+**/*.wtns
+**/witness
+**/*.witness
+**/proof.json
+**/*.proof.json
+
+# Benchmarks
+log
+*.log
+*.csv
+*.xlsx
+
+## From energy/zokrates-debs/.gitignore
+energy/zokrates-debs/historical
+energy/zokrates-debs/challenge1
+energy/zokrates-debs/challenge1.*.json
+energy/zokrates-debs/historical.*.json
+
+## From energy/zokrates-flexibility/.gitignore
+energy/zokrates-flexibility/flexibility
+energy/zokrates-flexibility/flexibility.*.json
+
+## From nexmark/zokrates-nexmark/.gitignore
+From nexmark/zokrates-nexmark/q1
+From nexmark/zokrates-nexmark/q*.*.json
+
+## From aggsigs/.gitignore
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Compiled Object files
+*.slo

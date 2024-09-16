@@ -26,14 +26,89 @@ The paper appears at the [25th ACM/IFIP International Middleware Conference (Mid
 [nexmark]: https://github.com/nexmark/nexmark
 [zokrates]: https://zokrates.github.io/
 
-## Dependencies
+## How to install
 
-- Zokrates
-- Rust
+The code in this repository requires the following dependencies:
 
-Installation instructions for Zokrates can be found at
+- [Zokrates](https://zokrates.github.io/)
+- [Rust](https://www.rust-lang.org/)
+
+There are two ways to install the dependencies: manually or using the Dockerfile.
+
+### 1. Manually
+
+Follow the instructions to install Rust at https://www.rust-lang.org/tools/install.
+Then, follow the installation instructions for Zokrates at
 https://zokrates.github.io/gettingstarted.html. Make sure the `zokrates` command
 is available in `$PATH`.
+
+Typically, the installation process looks like this:
+
+```bash
+# Install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
+# Install ZoKrates
+curl -LSfs get.zokrat.es | sh
+```
+
+### 2. Using the provided Dockerfile
+
+```bash
+docker build -t zkstream .
+docker run -it zkstream
+```
+
+This will build the Docker image, installing all the dependencies and building this repository.
+Running the container simply starts a shell session with the code in this repository mounted at `/home/zokrates`.
+
+Note that, to compile the Zokrates code, you will need to have 8 to 16GB of RAM available to the Docker container. (For the variant using SHA256 and signature verification in proof, even more is required.)
+
+## How to run
+
+The code in this repository is organized in three benchmarks: the DEBS challenge, the energy flexibility use case, and the NEXMark benchmark.
+
+### 1. DEBS challenge
+
+The DEBS challenge is a benchmark that predicts the energy consumption of a sensor.
+To run the DEBS challenge, follow these steps:
+
+```bash
+cd energy/zokrates-debs
+cargo run --release
+```
+
+This will compile the Zokrates code, run it and generate proofs, for both the historical and current data.
+
+`cargo run -- --help` will show the available options, e.g. to use other hash functions, variants, input sizes, etc.
+
+### 2. Energy flexibility use case
+
+The energy flexibility use case is a benchmark that calculates the increase or decrease in energy consumption of a sensor.
+You can run it with the following command:
+
+```bash
+cd energy/zokrates-flexibility
+cargo run --release
+```
+
+This will compile the Zokrates code, run it and generate a proof.
+
+Again, `cargo run -- --help` will show the available options, e.g. to use other hash functions, variants, input sizes, etc.
+
+### 3. NEXMark benchmark
+
+The NEXMark benchmark is a benchmark that simulates an auction system. It consists of several queries.
+To run the NEXMark benchmark, follow these steps:
+
+```bash
+cd nexmark/zokrates-nexmark
+cargo run --release -- -p q4
+```
+
+You can replace `q4` with any of the queries: `q1`, `q4`, `q5`, `q6`, `q7`.
+
+`cargo run -- --help` will again show the available options.
 
 ## License
 
