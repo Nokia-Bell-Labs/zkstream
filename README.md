@@ -80,7 +80,8 @@ cargo run --release
 
 This will compile the Zokrates code, run it and generate proofs, for both the historical and current data.
 
-`cargo run -- --help` will show the available options, e.g. to use other hash functions, variants, input sizes, etc.
+`cargo run -- --help` will show the available options, e.g. to use other hash functions, optimizations, input sizes, etc.
+In particular, the option `--variant` or `-v` allows you to choose between: poseidon, poseidon.nosig (default), poseidon.nosig.bls, sha256, sha256.nosig, sha256.nosig.bls. The naive version in the paper is variant `poseidon`, the first optimization is `poseidon.nosig`, and the second optimization is `poseidon.nosig.bls`. Note that the variants using sha256 need > 16 GB memory for compilation. Options should be provided after `--`, e.g. `cargo run -- -v poseidon.nosig`.
 
 ### 2. Energy flexibility use case
 
@@ -94,7 +95,7 @@ cargo run --release
 
 This will compile the Zokrates code, run it and generate a proof.
 
-Again, `cargo run -- --help` will show the available options, e.g. to use other hash functions, variants, input sizes, etc.
+Again, `cargo run -- --help` will show the available options, e.g. to use other hash functions, optimizations, input sizes, etc. There are three variants: poseidon (= naive version in the paper), poseidon.nosig (= first optimization), and poseidon.nosig.bls (= second optimization).
 
 ### 3. NEXMark benchmark
 
@@ -108,7 +109,7 @@ cargo run --release -- -p q4
 
 You can replace `q4` with any of the queries: `q1`, `q4`, `q5`, `q6`, `q7`.
 
-`cargo run -- --help` will again show the available options.
+`cargo run -- --help` will again show the available options. The option `-p` allows you to choose which query to run; `-v` which variant (same as above).
 
 ## License
 
