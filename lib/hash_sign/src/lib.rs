@@ -10,8 +10,8 @@ pub mod message;
 pub mod sign;
 pub mod utils;
 
-use hash::{SaltPoseidon, SaltSHA256};
-use poseidon_rs::Fr;
+pub use hash::{SaltPoseidon, SaltSHA256};
+pub use poseidon_rs::Fr;
 
 pub trait SerializableMessage {
     fn to_bytes(&self) -> Vec<u8>;
