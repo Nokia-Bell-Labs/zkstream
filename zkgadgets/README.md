@@ -71,6 +71,6 @@ The following tricks were used to make the gadgets more efficient:
 
 ## License
 
-TODO
+This project is licensed under the BSD 3-Clause Clear License - see the [LICENSE](../LICENSE) file for details.
 
 [zokrates]: https://zokrates.github.io/ "ZoKrates"
