@@ -111,6 +111,17 @@ You can replace `q4` with any of the queries: `q1`, `q4`, `q5`, `q6`, `q7`.
 
 `cargo run -- --help` will again show the available options. The option `-p` allows you to choose which query to run; `-v` which variant (same as above).
 
+## Limitations
+
+There are some shortcuts and limitations in the current code:
+
+1. As ZoKrates does not support 'private' (secret) outputs, proofs that have private outputs actually return them publicly. This means that, with the given code, the verifier gets access to these secrets! When this happens, this is indicated in the code in a comment. For example, in `energy/zokrates-debs/src/historical.poseidon.zok`, line 33: `// value (private), hashed value (public)` means that the first output should be kept private, while the second one is public. Some other languages than ZoKrates, e.g. RISC-Zero, do not have this limitation: they support private outputs.
+2. Leakage profiles may not always be obvious. For example, if the verifier keeps track of subsequent predictions in the DEBS challenge, they may be able to deduce the original input values. Even though theoretically this is part of the allowed leakage profile, it may still be unexpected.
+3. In the NEXMark benchmarks, partitioning is not fully checked by the verifier: we check whether all outputs are passed into inputs of the next step, but do not verify whether the partitioning was correct. This is possible by re-executing some of the steps of the prover in the verifier but not implemented.
+4. Simulating arithmetic operations in ZKP is slow. Therefore, we have converted floats into integers by multiplying them with 1000, which fits the range defined by the DEBS2014 specification. The verifier must divide by 1000 to get back to the correct values.
+5. We assume the public key is unique per (`plug_id`, `household_id`, `house_id`). Each property is represented as an unsigned 32 bit int. To simulate a more realistic setup, the sensor (signer) is not aware of the `house_id`, `household_id`, or `plug_id` as it is identified by a public key. Therefore, we define a device id which is known by the verifier, and can be mapped to the correct `house_id`, `household_id`, or `plug_id`. This additionally implies that the `device_id` uniquely maps to three 32 bit uint properties, which still comfortably fits in a single element (< 254 bits).
+6. A salt is split into 6 86-bit fields, similar to [chunking large numeric values in ed25519 where base 85 is used](https://github.com/Electron-Labs/ed25519-circom/blob/c9435c021384a74009c0b2ec2a5e863b2190e63b/circuits/verify.circom#L122). We use 86 bits because a 256 bit salt fits nicely in 6 elements. We are not clear on whether using more bits per element is considered safe.
+
 ## License
 
 This project is licensed under the BSD 3-Clause Clear License - see the [LICENSE](LICENSE) file for details.
