@@ -1,10 +1,12 @@
 # zkStream: a Framework for Trustworthy Stream Processing
 
-This repository contains the code that is published as part of the artifact evaluation for the paper titled "zkStream: a Framework for Trustworthy Stream Processing".
-
-The paper appears at the [25th ACM/IFIP International Middleware Conference (Middleware 2024)](https://middleware-conf.github.io/2024/) on December 2-6, 2024.
+This repository contains the code that is published as the artifact for [the paper titled "zkStream: a Framework for Trustworthy Stream Processing"](https://dl.acm.org/doi/10.1145/3652892.3700763). The paper was published at the [25th ACM/IFIP International Middleware Conference (Middleware 2024)](https://middleware-conf.github.io/2024/).
 
 ## Repository structure
+
+The tag `initial-import` contains the code exactly as it was used to run the benchmarks of the paper. The tag `1.0.0` refers to a cleaned-up version of that code (merging some common code between projects, cleaning up the code, adding copyright information). The `master` branch contains the latest version, and is recommended if you want to build on this project.
+
+The repository contains the following folders:
 
 - `aggsigs`: a wrapper around the [BLST library][blst] to preven the rogue public-key attack.
 - `lib`:
@@ -129,3 +131,25 @@ This project is licensed under the BSD 3-Clause Clear License - see the [LICENSE
 Patent pending.
 
 This is a proof-of-concept prototype. The code in this project has not been audited. It has not been reviewed for use in production environments.
+
+## Citation
+
+If you build upon this work, you can cite our paper:
+
+```
+@inproceedings{10.1145/3652892.3700763,
+author = {Swalens, Janwillem and Hoste, Lode and Beni, Emad Heydari and Trappeniers, Lieven},
+title = {zkStream: a Framework for Trustworthy Stream Processing},
+year = {2024},
+isbn = {9798400706233},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/10.1145/3652892.3700763},
+doi = {10.1145/3652892.3700763},
+booktitle = {Proceedings of the 25th International Middleware Conference},
+pages = {252–265},
+numpages = {14},
+location = {Hong Kong, Hong Kong},
+series = {MIDDLEWARE '24}
+}
+```
