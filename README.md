@@ -2,6 +2,14 @@
 
 This repository contains the code that is published as the artifact for [the paper titled "zkStream: a Framework for Trustworthy Stream Processing"](https://dl.acm.org/doi/10.1145/3652892.3700763). The paper was published at the [25th ACM/IFIP International Middleware Conference (Middleware 2024)](https://middleware-conf.github.io/2024/).
 
+> In stream processing, managing sensitive information in a timely manner while ensuring trust remains a significant challenge. When parties without a priori trust cooperate to execute a streaming application, it is difficult to ensure that sensitive data is kept confidential while guaranteeing that every party executes their code honestly.
+>
+> This paper presents zkStream: a framework that leverages signatures and zero-knowledge proofs (ZKP) to add trust to streaming applications that run in the edge cloud, guaranteeing data confidentiality, provenance, and computational integrity. We introduce two optimizations to minimize the computational overhead associated with ZKPs, making our framework suitable for real-world applications.
+>
+> We validated our solution with existing benchmarks for streaming applications. Our method achieves an end-to-end latency that is between 6.5 and 15× faster than a naive implementation, demonstrating its potential for industrial adoption where trust is critical.
+
+This repository contains the framework (including optimizations), our library of "zero-knowledge gadgets", and the benchmarks.
+
 ## Repository structure
 
 The tag `initial-import` contains the code exactly as it was used to run the benchmarks of the paper. The tag `1.0.0` refers to a cleaned-up version of that code (merging some common code between projects, cleaning up the code, adding copyright information). The `master` branch contains the latest version, and is recommended if you want to build on this project.
